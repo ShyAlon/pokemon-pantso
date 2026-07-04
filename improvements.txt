@@ -1,0 +1,6 @@
+1. create a top bar with a menu that will allow the player to restart, or create a new session.
+2. Once the "League Unlocked" is presented, allow the player to participate in the league (similar gameplay but in an arena) which should be infinite.
+3. Add more animations.
+4. Enrich the pokemon library. Use their images.
+5. In the pokemon library include a "lore" for each pokemon (visible by clicking on an info icon)
+6. 

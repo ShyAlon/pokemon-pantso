@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bantso">
+  <meta name="theme-color" content="#2d5a27">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Pokémon Bantso</title>
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+<div id="game">
+  <!-- Progress Bar -->
+  <div id="progress-bar">
+    <button id="menu-btn" title="Menu">☰</button>
+    <div class="progress-star" id="level-star">1</div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width: 8%"></div>
+      <div class="progress-text" id="progress-text">1 / 18 Catch to Unlock!</div>
+    </div>
+    <div class="progress-flag">🏁</div>
+    <!-- Menu Dropdown -->
+    <div id="menu-dropdown">
+      <button class="menu-item" id="menu-restart">🔄 Restart</button>
+      <button class="menu-item danger" id="menu-newgame">🗑️ New Game</button>
+      <div class="menu-divider"></div>
+      <button class="menu-item" id="menu-close">✕ Close</button>
+    </div>
+  </div>
+
+  <!-- Game Area -->
+  <div id="game-area">
+    <!-- Forest Screen -->
+    <div class="screen active" id="forest-screen">
+      <div id="iso-grid"></div>
+      <div id="child-char">
+        <div class="child-head"><div class="child-cap-visor"></div></div>
+        <div class="child-backpack"></div>
+        <div class="child-body"></div>
+        <div class="child-legs">
+          <div class="child-leg"></div>
+          <div class="child-leg"></div>
+        </div>
+      </div>
+      <button id="team-access-btn" title="Team">🎒</button>
+    </div>
+
+    <!-- Battle Screen -->
+    <div class="screen" id="battle-screen">
+      <div class="battle-arena" id="battle-arena">
+        <div class="battle-ground"></div>
+        <div class="battler ally" id="battler-ally">
+          <div class="pokemon-sprite" id="ally-sprite">
+            <img class="poke-img" id="ally-img" src="" alt="" style="display:none" onerror="this.style.display='none';document.getElementById('ally-emoji').classList.add('show')" onload="this.style.display='block';document.getElementById('ally-emoji').classList.remove('show')">
+            <span class="emoji-fallback show" id="ally-emoji"></span>
+          </div>
+          <button class="info-icon" id="ally-info" title="Info">ℹ️</button>
+          <div class="pokemon-name" id="ally-name"></div>
+          <div class="health-bar-container">
+            <div class="health-bar green" id="ally-hp-bar"></div>
+          </div>
+          <div class="hp-text" id="ally-hp-text"></div>
+        </div>
+        <div class="battler enemy" id="battler-enemy">
+          <div class="pokemon-sprite" id="enemy-sprite">
+            <img class="poke-img" id="enemy-img" src="" alt="" style="display:none" onerror="this.style.display='none';document.getElementById('enemy-emoji').classList.add('show')" onload="this.style.display='block';document.getElementById('enemy-emoji').classList.remove('show')">
+            <span class="emoji-fallback show" id="enemy-emoji"></span>
+          </div>
+          <button class="info-icon" id="enemy-info" title="Info">ℹ️</button>
+          <div class="pokemon-name" id="enemy-name"></div>
+          <div class="health-bar-container">
+            <div class="health-bar green" id="enemy-hp-bar"></div>
+          </div>
+          <div class="hp-text" id="enemy-hp-text"></div>
+        </div>
+      </div>
+      <div class="battle-msg" id="battle-msg"></div>
+      <div id="battle-actions">
+        <button class="action-btn attack" id="btn-attack">
+          <span class="btn-icon">⚔️</span> ATTACK
+        </button>
+        <button class="action-btn catch" id="btn-catch">
+          <span class="btn-icon">🔵</span> CATCH
+        </button>
+        <button class="action-btn swap" id="btn-swap">
+          <span class="btn-icon">🔄</span> SWAP
+        </button>
+      </div>
+    </div>
+
+    <!-- League Unlocked Screen -->
+    <div class="screen" id="league-screen">
+      <div class="trophy">🏆</div>
+      <div class="congrats">League Unlocked!</div>
+      <div class="subtitle">You are a Champion!</div>
+      <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;justify-content:center">
+        <button id="league-enter-btn" style="padding:16px 28px;border-radius:14px;background:linear-gradient(180deg,#c8a020,#8b6914);color:#fff;border:3px solid rgba(0,0,0,0.3);font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #6b4f10">🏟️ Enter Arena</button>
+        <button id="league-forest-btn" style="padding:16px 28px;border-radius:14px;background:linear-gradient(180deg,#5cb85c,#3d8b3d);color:#fff;border:3px solid rgba(0,0,0,0.3);font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #2d6a2d">🌲 Forest</button>
+        <button id="league-restart-btn" style="padding:16px 28px;border-radius:14px;background:rgba(255,255,255,0.15);color:#fff;border:2px solid rgba(255,255,255,0.25);font-size:16px;font-weight:700;cursor:pointer">🔄 Restart</button>
+      </div>
+    </div>
+
+    <!-- League Arena Screen -->
+    <div class="screen" id="league-arena-screen">
+      <div class="arena-bg"></div>
+      <div class="arena-crowd"></div>
+      <div class="arena-content">
+        <div class="arena-trophy">🏟️</div>
+        <div class="arena-title">League Arena</div>
+        <div class="arena-wins" id="arena-wins">Wins: 0</div>
+        <div class="battler ally" style="margin:10px 0">
+          <div class="pokemon-sprite" id="arena-sprite" style="width:90px;height:90px;min-width:90px">
+            <img class="poke-img" id="arena-img" src="" alt="" style="display:none" onerror="this.style.display='none';document.getElementById('arena-emoji').classList.add('show')" onload="this.style.display='block';document.getElementById('arena-emoji').classList.remove('show')">
+            <span class="emoji-fallback show" id="arena-emoji" style="font-size:45px"></span>
+          </div>
+          <div class="pokemon-name" id="arena-pkmn-name"></div>
+        </div>
+      </div>
+      <button id="arena-fight-btn" class="action-btn attack" style="margin:0 auto 16px;max-width:300px;width:calc(100% - 32px);min-height:64px;border-radius:12px;font-size:18px;flex:none;">
+        <span class="btn-icon">⚔️</span> FIGHT
+      </button>
+    </div>
+  </div>
+
+  <!-- Action Button Area -->
+  <div id="action-btn-area">
+    <button id="explore-btn">
+      <span class="btn-icon">🥾</span> EXPLORE
+    </button>
+    <button id="league-btn">
+      <span class="btn-icon">🏟️</span> LEAGUE
+    </button>
+  </div>
+
+  <!-- Effects Layer -->
+  <div id="effects-layer">
+    <div class="flash-overlay" id="flash"></div>
+    <div class="checkmark" id="checkmark">✅</div>
+    <div class="cross-mark" id="cross-mark">❌</div>
+    <div class="slash-effect" id="slash-effect">💥</div>
+    <div class="pokeball-anim" id="pokeball-anim">🔴</div>
+    <div class="catch-success" id="catch-success"></div>
+  </div>
+
+  <!-- Team Overlay -->
+  <div id="team-overlay">
+    <div class="team-header">
+      <h2>My Team</h2>
+      <button class="team-close" id="team-close">✕</button>
+    </div>
+    <div class="team-grid" id="team-grid"></div>
+  </div>
+
+  <!-- Lore Modal -->
+  <div id="lore-modal">
+    <div class="lore-card">
+      <div class="lore-sprite" id="lore-sprite">
+        <img class="lore-img" id="lore-img" src="" alt="" style="display:none" onerror="this.style.display='none';document.getElementById('lore-emoji').style.display='block'" onload="this.style.display='block';document.getElementById('lore-emoji').style.display='none'">
+        <span id="lore-emoji" style="font-size:50px"></span>
+      </div>
+      <div class="lore-name" id="lore-name"></div>
+      <div class="lore-text" id="lore-text"></div>
+      <button class="lore-close" id="lore-close">OK!</button>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="confirm-modal" style="position:absolute;inset:0;z-index:500;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:30px">
+    <div style="background:#2a2a2a;border:2px solid #555;border-radius:16px;padding:24px;max-width:340px;text-align:center">
+      <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:8px" id="confirm-title">Are you sure?</div>
+      <div style="font-size:15px;color:#aaa;margin-bottom:16px" id="confirm-msg">All progress will be lost!</div>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <button id="confirm-yes" style="padding:12px 28px;border-radius:12px;background:#ff4444;color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer">Yes</button>
+        <button id="confirm-no" style="padding:12px 28px;border-radius:12px;background:#555;color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer">No</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JS: load order matters — dependencies first -->
+<script src="js/db.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/species.js"></script>
+<script src="js/state.js"></script>
+<script src="js/persist.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/league.js"></script>
+<script src="js/forest.js"></script>
+<script src="js/team.js"></script>
+<script src="js/lore.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/events.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
