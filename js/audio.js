@@ -1,13 +1,62 @@
 'use strict';
 
 // ============================================================
-//  js/audio.js — Web Audio API sound engine
+//  js/audio.js — Web Audio API sound engine + procedural music
 // ============================================================
+
+// Note frequencies (A4 = 440Hz)
+const N = {
+  A2:110,
+  C3:131, D3:147, E3:165, F3:175, G3:196, A3:220, B3:247,
+  C4:262, D4:294, E4:330, F4:349, G4:392, A4:440, B4:494,
+  C5:523, D5:587, E5:659, G5:784, A5:880,
+};
+
+// Forest theme — calm pentatonic melody (C major) + bass
+// dur units: 1=quarter, 2=half, 3=dotted-half, 4=whole
+const FOREST_MELODY = [
+  {f:N.E4,d:2},{f:N.G4,d:1},{f:N.A4,d:1},{f:N.G4,d:2},{f:N.E4,d:2},{f:N.D4,d:1},{f:N.C4,d:1},{f:N.D4,d:2},
+  {f:N.E4,d:2},{f:N.G4,d:2},{f:N.A4,d:2},{f:N.G4,d:1},{f:N.E4,d:1},{f:N.D4,d:2},{f:N.C4,d:4},
+  {f:N.G4,d:1},{f:N.A4,d:1},{f:N.C5,d:2},{f:N.A4,d:2},{f:N.G4,d:2},{f:N.E4,d:2},{f:N.D4,d:2},{f:N.C4,d:4},
+  {f:N.D4,d:1},{f:N.E4,d:1},{f:N.G4,d:2},{f:N.E4,d:2},{f:N.D4,d:2},{f:N.C4,d:1},{f:N.D4,d:1},{f:N.E4,d:4},
+  {f:N.C4,d:2},{f:N.D4,d:2},{f:N.E4,d:1},{f:N.G4,d:1},{f:N.A4,d:2},{f:N.G4,d:2},{f:N.E4,d:2},{f:N.C4,d:4},
+  {f:N.G3,d:2},{f:N.C4,d:2},{f:N.E4,d:2},{f:N.D4,d:2},{f:N.C4,d:4},
+  {f:N.E4,d:2},{f:N.D4,d:1},{f:N.C4,d:1},{f:N.A3,d:2},{f:N.C4,d:2},{f:N.E4,d:2},{f:N.D4,d:2},{f:N.C4,d:4},
+];
+
+const FOREST_BASS = [
+  {f:N.C3,d:4},{f:N.G3,d:4},{f:N.C3,d:4},{f:N.G3,d:4},
+  {f:N.F3,d:4},{f:N.C4,d:4},{f:N.G3,d:4},{f:N.C3,d:4},
+  {f:N.A2,d:4},{f:N.C3,d:4},{f:N.G3,d:4},{f:N.C3,d:4},
+  {f:N.F3,d:4},{f:N.C3,d:4},{f:N.G3,d:4},{f:N.C3,d:4},
+];
+
+// Battle theme — faster, minor-key (A minor), more intense
+const BATTLE_MELODY = [
+  {f:N.A4,d:1},{f:N.G4,d:1},{f:N.A4,d:1},{f:N.C5,d:1},{f:N.A4,d:2},{f:N.G4,d:1},{f:N.E4,d:1},{f:N.D4,d:2},
+  {f:N.A4,d:1},{f:N.G4,d:1},{f:N.A4,d:2},{f:N.E4,d:1},{f:N.D4,d:1},{f:N.C4,d:2},{f:N.D4,d:1},{f:N.E4,d:2},
+  {f:N.A4,d:1},{f:N.G4,d:1},{f:N.F4,d:1},{f:N.E4,d:1},{f:N.D4,d:2},{f:N.C4,d:2},{f:N.D4,d:1},{f:N.E4,d:1},
+  {f:N.D4,d:1},{f:N.C4,d:1},{f:N.A3,d:2},{f:N.C4,d:2},{f:N.D4,d:2},{f:N.E4,d:2},
+  {f:N.E4,d:1},{f:N.F4,d:1},{f:N.G4,d:2},{f:N.A4,d:1},{f:N.G4,d:1},{f:N.F4,d:2},{f:N.E4,d:2},{f:N.D4,d:2},
+  {f:N.C5,d:1},{f:N.A4,d:1},{f:N.G4,d:2},{f:N.A4,d:1},{f:N.G4,d:1},{f:N.E4,d:4},
+  {f:N.A4,d:1},{f:N.C5,d:1},{f:N.A4,d:1},{f:N.G4,d:1},{f:N.A4,d:2},{f:N.E4,d:2},{f:N.G4,d:2},{f:N.A4,d:2},
+  {f:N.G4,d:1},{f:N.E4,d:1},{f:N.D4,d:1},{f:N.C4,d:1},{f:N.D4,d:2},{f:N.E4,d:2},{f:N.C4,d:4},
+];
+
+const BATTLE_BASS = [
+  {f:N.A2,d:2},{f:N.E3,d:2},{f:N.A2,d:2},{f:N.E3,d:2},
+  {f:N.D3,d:2},{f:N.A2,d:2},{f:N.E3,d:2},{f:N.A2,d:2},
+  {f:N.F3,d:2},{f:N.C3,d:2},{f:N.G3,d:2},{f:N.D3,d:2},
+  {f:N.A2,d:2},{f:N.E3,d:2},{f:N.A2,d:2},{f:N.E3,d:2},
+];
 
 class SoundEngine {
   constructor() {
     this.ctx = null;
     this.enabled = true;
+    this._musicTimeouts = [];
+    this._musicActive = false;
+    this._currentMusic = null;
   }
 
   init() {
@@ -26,6 +75,7 @@ class SoundEngine {
     }
   }
 
+  // ---- SFX ----
   play(type) {
     if (!this.enabled || !this.ctx) return;
     this.resume();
@@ -41,7 +91,56 @@ class SoundEngine {
     }
   }
 
+  // ---- Music ----
+  playMusic(type) {
+    if (!this.enabled || !this.ctx) return;
+    if (this._currentMusic === type) return;
+    this.resume();
+    this.stopMusic();
+    this._musicActive = true;
+    this._currentMusic = type;
+    console.log('[Bantso:audio] Starting music:', type);
+
+    switch(type) {
+      case 'forest':
+        this._startMelody(FOREST_MELODY, 110, 'triangle', 0.06);
+        this._startMelody(FOREST_BASS, 110, 'sine', 0.05);
+        break;
+      case 'battle':
+        this._startMelody(BATTLE_MELODY, 155, 'square', 0.07);
+        this._startMelody(BATTLE_BASS, 155, 'sawtooth', 0.04);
+        break;
+    }
+  }
+
+  stopMusic() {
+    this._musicActive = false;
+    this._currentMusic = null;
+    this._musicTimeouts.forEach(clearTimeout);
+    this._musicTimeouts = [];
+    console.log('[Bantso:audio] Music stopped');
+  }
+
+  _startMelody(notes, bpm, voiceType, volume) {
+    const beatMs = 60000 / bpm;
+    const playStep = (idx) => {
+      if (!this._musicActive) return;
+      const note = notes[idx % notes.length];
+      const durSec = note.d * beatMs / 1000;
+      this._tone(note.f, durSec * 0.85, voiceType, volume);
+      const tid = setTimeout(() => playStep(idx + 1), durSec * 1000);
+      this._musicTimeouts.push(tid);
+    };
+    playStep(0);
+  }
+
+  // ---- Tone generators ----
   _tone(freq, duration, type='square', volume=0.15, startTime=0) {
+    if (!this.ctx) return;
+    if (!isFinite(freq) || !isFinite(duration) || !isFinite(volume)) {
+      console.warn('[Bantso:audio] _tone skipped — non-finite param', {freq, duration, volume});
+      return;
+    }
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = type;
@@ -55,6 +154,7 @@ class SoundEngine {
   }
 
   _noise(duration, volume=0.1, startTime=0) {
+    if (!this.ctx) return;
     const bufSize = this.ctx.sampleRate * duration;
     const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
     const data = buf.getChannelData(0);

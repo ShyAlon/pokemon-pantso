@@ -28,8 +28,8 @@ function createEnemyPokemon(species) {
   };
 }
 
-function startBattle() {
-  const species = getWildPokemonSpecies();
+function startBattle(forcedSpeciesId) {
+  const species = forcedSpeciesId ? getSpecies(forcedSpeciesId) : getWildPokemonSpecies();
   const enemy = createEnemyPokemon(species);
   if (!enemy) return;
 
@@ -62,12 +62,16 @@ function renderBattle() {
   if (!activePkmn) return;
 
   const playerStats = Game.getEffectiveStats(activePkmn);
+  const allySp = getSpecies(activePkmn.speciesId);
+  const enemySp = getSpecies(enemy.speciesId);
   setSpriteImage('ally-img', 'ally-emoji', activePkmn.speciesId);
-  $('#ally-name').textContent = getSpecies(activePkmn.speciesId).name;
+  $('#ally-name').textContent = allySp.name;
+  $('#ally-types').innerHTML = renderTypeBadges(allySp.types);
   renderHealthBar('ally-hp-bar', 'ally-hp-text', activePkmn.currentHp, playerStats.maxHp);
 
   setSpriteImage('enemy-img', 'enemy-emoji', enemy.speciesId);
   $('#enemy-name').textContent = enemy.name;
+  $('#enemy-types').innerHTML = renderTypeBadges(enemySp.types);
   renderHealthBar('enemy-hp-bar', 'enemy-hp-text', enemy.currentHp, enemy.maxHp);
 
   updateBattleActions();
@@ -93,6 +97,34 @@ function updateBattleActions() {
   $('#btn-swap').disabled = disabled;
 }
 
+// Narration templates — Pokémon name + action, 20 variants
+const ATTACK_FLAVORS = [
+  (n,d) => `${n} strikes! — ${d} HP`,
+  (n,d) => `Go, ${n}! — ${d} HP`,
+  (n,d) => `${n} slashes through! — ${d} HP`,
+  (n,d) => `${n} lands a hit! — ${d} HP`,
+  (n,d) => `Nice one, ${n}! — ${d} HP`,
+  (n,d) => `${n} tackles hard! — ${d} HP`,
+  (n,d) => `${n} is unstoppable! — ${d} HP`,
+  (n,d) => `Whoa! ${n} smashes! — ${d} HP`,
+  (n,d) => `${n} with a quick attack! — ${d} HP`,
+  (n,d) => `Bam! ${n} hits! — ${d} HP`,
+  (n,d) => `${n} swipes fiercely! — ${d} HP`,
+  (n,d) => `${n} doesn't hold back! — ${d} HP`,
+  (n,d) => `A powerful blow from ${n}! — ${d} HP`,
+  (n,d) => `${n} charges forward! — ${d} HP`,
+  (n,d) => `${n} leaps into action! — ${d} HP`,
+  (n,d) => `${n} lands a critical hit! — ${d} HP`,
+  (n,d) => `Right on target, ${n}! — ${d} HP`,
+  (n,d) => `${n} shows its strength! — ${d} HP`,
+  (n,d) => `${n} pounces! — ${d} HP`,
+  (n,d) => `Great form, ${n}! — ${d} HP`,
+];
+function pickAttackFlavor(name, damage) {
+  const fn = ATTACK_FLAVORS[Math.floor(Math.random() * ATTACK_FLAVORS.length)];
+  return fn(name, damage);
+}
+
 function playerAttack() {
   if (Game.busy || !Game.battle || Game.battle.turn !== 'player') return;
   console.log('[Bantso:battle] Player attacks');
@@ -102,16 +134,23 @@ function playerAttack() {
 
   const activePkmn = Game.getActivePokemon();
   if (!activePkmn) return;
+  const allySpecies = getSpecies(activePkmn.speciesId);
+  const enemySpecies = getSpecies(Game.battle.enemy.speciesId);
   const stats = Game.getEffectiveStats(activePkmn);
   const variation = Math.floor(Math.random() * 7) - 3;
-  const damage = Math.max(1, stats.damage + variation);
-  console.log('[Bantso:battle] Damage dealt:', damage, '(base:', stats.damage, 'var:', variation, ')');
+  const rawDamage = Math.max(1, stats.damage + variation);
+
+  // Type effectiveness
+  const eff = getTypeEffectiveness(allySpecies.types, enemySpecies.types);
+  const damage = Math.max(1, Math.round(rawDamage * eff.multiplier));
+  console.log('[Bantso:battle] Damage:', damage, '(raw:', rawDamage, 'x', eff.multiplier.toFixed(1), eff.label, ')');
 
   Game.battle.enemy.currentHp = Math.max(0, Game.battle.enemy.currentHp - damage);
   Game.audio.play('attack');
   shakeSprite('#enemy-sprite');
   showSlash(300);
-  $('#battle-msg').textContent = `-${damage} HP!`;
+  const msg = pickAttackFlavor(allySpecies.name, damage);
+  $('#battle-msg').textContent = eff.label ? msg + ' — ' + eff.label : msg;
   renderBattle();
 
   setTimeout(() => {
@@ -192,7 +231,7 @@ function enemyTurn() {
   Game.audio.play('attack');
   shakeSprite('#ally-sprite');
   renderBattle();
-  $('#battle-msg').textContent = `-${damage} HP!`;
+  $('#battle-msg').textContent = `Wild ${Game.battle.enemy.name} hits! -${damage} HP`;
 
   if (activePkmn.currentHp <= 0) {
     const alive = Game.collection.filter(p => p.id !== activePkmn.id && p.currentHp > 0);

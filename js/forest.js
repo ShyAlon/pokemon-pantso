@@ -4,13 +4,14 @@
 //  js/forest.js — Isometric grid exploration
 // ============================================================
 
-const GRID_SIZE = 9;
-const TILE_HW = 38;  // half-width of diamond
-const TILE_HH = 19;  // half-height of diamond
+const GRID_SIZE = 7;
+const TILE_HW = 64;  // half-width of diamond
+const TILE_HH = 32;  // half-height of diamond
+const TILE_SZ = TILE_HW * 2; // full tile square size (128px)
 
 // Per-tile terrain: 'grass' | 'bush' | 'trees'
 let gridTerrain = [];
-// Hint tiles: [{row, col}]
+// Hint tiles: [{row, col, speciesId}]
 let hintTiles = [];
 // Player position on the grid
 let playerPos = { row: 4, col: 4 };
@@ -121,23 +122,28 @@ function renderIsometricGrid() {
       const z = (r + c) * 2;
       const tileClass = isHint ? 'iso-tile hint' : 'iso-tile ' + terrain;
 
-      html += `<div class="${tileClass}" style="left:${x - 37}px;top:${y - 37}px;z-index:${z}"
+      html += `<div class="${tileClass}" style="left:${x - TILE_SZ/2}px;top:${y - TILE_SZ/2}px;z-index:${z}"
         data-row="${r}" data-col="${c}"></div>`;
 
       // Decorations on top of tile
       if (terrain === 'trees') {
-        html += `<div class="iso-tree-top" style="left:${x - 16}px;top:${y - 55}px;z-index:${z + 5}"></div>`;
-        html += `<div class="iso-tree-trunk" style="left:${x - 4}px;top:${y - 21}px;z-index:${z + 4}"></div>`;
+        html += `<div class="iso-tree-top" style="left:${x - 24}px;top:${y - 82}px;z-index:${z + 5}"></div>`;
+        html += `<div class="iso-tree-trunk" style="left:${x - 6}px;top:${y - 32}px;z-index:${z + 4}"></div>`;
       } else if (terrain === 'bush') {
-        html += `<div class="iso-bush" style="left:${x - 14}px;top:${y - 30}px;z-index:${z + 5}"></div>`;
-        html += `<div class="iso-bush" style="left:${x + 2}px;top:${y - 34}px;z-index:${z + 5};width:22px;height:16px"></div>`;
+        html += `<div class="iso-bush" style="left:${x - 22}px;top:${y - 46}px;z-index:${z + 5}"></div>`;
+        html += `<div class="iso-bush" style="left:${x + 4}px;top:${y - 52}px;z-index:${z + 5};width:32px;height:24px"></div>`;
       }
 
-      // Hint leaves
+      // Type-specific hint emojis
       if (isHint) {
-        html += `<div class="hint-leaves" style="left:${x - 8}px;top:${y - 50}px">🍃</div>`;
-        html += `<div class="hint-leaves" style="left:${x + 10}px;top:${y - 44}px;animation-delay:0.25s">🌿</div>`;
-        html += `<div class="hint-leaves" style="left:${x - 14}px;top:${y - 38}px;animation-delay:0.15s;font-size:14px">✨</div>`;
+        const hintSp = getSpecies(hintTiles.find(h => h.row === r && h.col === c).speciesId);
+        const e1 = TYPE_HINT_EMOJI[hintSp.types[0]] || '🌟';
+        const e2 = hintSp.types[1] ? TYPE_HINT_EMOJI[hintSp.types[1]] : '✨';
+        html += `<div class="hint-leaves" style="left:${x - 14}px;top:${y - 76}px">${e1}</div>`;
+        html += `<div class="hint-leaves" style="left:${x + 8}px;top:${y - 66}px;animation-delay:0.2s">💫</div>`;
+        if (hintSp.types[1]) {
+          html += `<div class="hint-leaves" style="left:${x - 4}px;top:${y - 56}px;animation-delay:0.1s;font-size:16px">${e2}</div>`;
+        }
       }
     }
   }
@@ -152,7 +158,7 @@ function updateChildPosition() {
   if (!charEl) return;
   const { x, y } = tileToScreen(playerPos.row, playerPos.col);
   charEl.style.left = (x - 18) + 'px';
-  charEl.style.top = (y - 52) + 'px';
+  charEl.style.top = (y - 78) + 'px';
 }
 
 function spawnHints() {
@@ -175,9 +181,16 @@ function spawnHints() {
     const j = Math.floor(Math.random() * (i + 1));
     [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
   }
-  hintTiles = candidates.slice(0, count);
 
-  console.log('[Bantso:forest] Hints spawned:', count, '| at', hintTiles.map(h => '(' + h.row + ',' + h.col + ')').join(' '));
+  // Pick uncaught species for each hint
+  const uncaught = SPECIES.filter(s => !Game.caughtSpecies.includes(s.id));
+  const speciesPool = uncaught.length > 0 ? uncaught : SPECIES;
+  hintTiles = candidates.slice(0, count).map(tile => ({
+    ...tile,
+    speciesId: speciesPool[Math.floor(Math.random() * speciesPool.length)].id,
+  }));
+
+  console.log('[Bantso:forest] Hints spawned:', count, '| at', hintTiles.map(h => '(' + h.row + ',' + h.col + ' ' + h.speciesId + ')').join(' '));
 
   // Schedule hint refresh
   if (hintTimer) clearTimeout(hintTimer);
@@ -269,18 +282,20 @@ function walkPath(path, idx) {
   Game.audio.play('click');
 
   // Check for encounter on this step
-  const isHint = hintTiles.some(h => h.row === step.row && h.col === step.col);
+  const hint = hintTiles.find(h => h.row === step.row && h.col === step.col);
+  const isHint = !!hint;
   const encounterChance = isHint ? 0.95 : 0.35;
   const encounter = Math.random() < encounterChance;
 
-  console.log('[Bantso:forest] Step', idx + 1, '| pos:', step.row, step.col, '| hint:', isHint, '| encounter:', encounter ? 'YES!' : 'no');
+  console.log('[Bantso:forest] Step', idx + 1, '| pos:', step.row, step.col, '| hint:', isHint ? hint.speciesId : 'none', '| encounter:', encounter ? 'YES!' : 'no');
 
   if (encounter) {
     // Clear hints since we're entering battle
     hintTiles = [];
     if (hintTimer) clearTimeout(hintTimer);
     // Keep busy=true until startBattle takes over (it resets busy)
-    setTimeout(() => startBattle(), 150);
+    const forcedSpecies = isHint ? hint.speciesId : null;
+    setTimeout(() => startBattle(forcedSpecies), 150);
   } else {
     setTimeout(() => walkPath(path, idx + 1), 350);
   }

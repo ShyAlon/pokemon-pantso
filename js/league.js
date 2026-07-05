@@ -70,12 +70,16 @@ function renderLeagueBattle() {
   if (!activePkmn) return;
 
   const playerStats = Game.getEffectiveStats(activePkmn);
+  const allySp = getSpecies(activePkmn.speciesId);
+  const enemySp = getSpecies(enemy.speciesId);
   setSpriteImage('ally-img', 'ally-emoji', activePkmn.speciesId);
-  $('#ally-name').textContent = getSpecies(activePkmn.speciesId).name;
+  $('#ally-name').textContent = allySp.name;
+  $('#ally-types').innerHTML = renderTypeBadges(allySp.types);
   renderHealthBar('ally-hp-bar', 'ally-hp-text', activePkmn.currentHp, playerStats.maxHp);
 
   setSpriteImage('enemy-img', 'enemy-emoji', enemy.speciesId);
   $('#enemy-name').textContent = enemy.name;
+  $('#enemy-types').innerHTML = renderTypeBadges(enemySp.types);
   renderHealthBar('enemy-hp-bar', 'enemy-hp-text', enemy.currentHp, enemy.maxHp);
 
   $('#btn-catch').style.display = 'none';
@@ -99,15 +103,21 @@ function leagueAttack() {
 
   const activePkmn = Game.getActivePokemon();
   if (!activePkmn) return;
+  const allySpecies = getSpecies(activePkmn.speciesId);
+  const enemySpecies = getSpecies(Game.leagueBattle.enemy.speciesId);
   const stats = Game.getEffectiveStats(activePkmn);
   const variation = Math.floor(Math.random() * 7) - 3;
-  const damage = Math.max(1, stats.damage + variation);
+  const rawDamage = Math.max(1, stats.damage + variation);
+
+  const eff = getTypeEffectiveness(allySpecies.types, enemySpecies.types);
+  const damage = Math.max(1, Math.round(rawDamage * eff.multiplier));
 
   Game.leagueBattle.enemy.currentHp = Math.max(0, Game.leagueBattle.enemy.currentHp - damage);
   Game.audio.play('attack');
   shakeSprite('#enemy-sprite');
   showSlash(300);
-  $('#battle-msg').textContent = `-${damage} HP!`;
+  const msg = pickAttackFlavor(allySpecies.name, damage);
+  $('#battle-msg').textContent = eff.label ? msg + ' — ' + eff.label : msg;
   renderLeagueBattle();
 
   setTimeout(() => {
@@ -132,7 +142,7 @@ function leagueEnemyTurn() {
   Game.audio.play('attack');
   shakeSprite('#ally-sprite');
   renderLeagueBattle();
-  $('#battle-msg').textContent = `-${damage} HP!`;
+  $('#battle-msg').textContent = `${Game.leagueBattle.enemy.name} strikes! -${damage} HP`;
 
   if (activePkmn.currentHp <= 0) {
     const alive = Game.collection.filter(p => p.id !== activePkmn.id && p.currentHp > 0);

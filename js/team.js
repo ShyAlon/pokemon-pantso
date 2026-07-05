@@ -41,6 +41,7 @@ function renderTeamGrid() {
           <span class="emoji-fallback" style="font-size:38px">${species.emoji}</span>
         </div>
         <div class="mini-name">${species.name}</div>
+        <div class="type-badges">${renderTypeBadges(species.types)}</div>
         <div class="mini-hp-bar">
           <div class="mini-hp-fill" style="width:${hpPct}%"></div>
         </div>

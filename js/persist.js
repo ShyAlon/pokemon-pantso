@@ -66,6 +66,13 @@ async function loadGame() {
     if (!Game.activePokemonId) {
       Game.activePokemonId = collection[0].id;
     }
+    // Rebuild caughtSpecies from actual collection — don't trust stale saved state
+    const uniqueFromCollection = [...new Set(collection.map(p => p.speciesId))];
+    if (uniqueFromCollection.length !== Game.caughtSpecies.length) {
+      console.log('[Bantso:persist] Rebuilding caughtSpecies from collection:', uniqueFromCollection.length, 'unique (was', Game.caughtSpecies.length, ')');
+      Game.caughtSpecies = uniqueFromCollection;
+      Game.caughtCount = collection.length;
+    }
   } else {
     console.log('[Bantso:persist] No collection found — creating starter Pikachu');
     const starter = {

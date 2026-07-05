@@ -18,6 +18,15 @@ function showScreen(name) {
   const leagueBtn = $('#league-btn');
   const teamBtn = $('#team-access-btn');
 
+  // Music switching
+  if (name === 'forest' || name === 'league-arena') {
+    Game.audio.playMusic('forest');
+  } else if (name === 'battle') {
+    Game.audio.playMusic('battle');
+  } else {
+    Game.audio.stopMusic();
+  }
+
   if (name === 'forest') {
     if (exploreBtn) exploreBtn.style.display = 'none'; // grid click replaces EXPLORE
     if (leagueBtn) leagueBtn.style.display = Game.leagueUnlocked ? 'flex' : 'none';
