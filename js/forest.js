@@ -4,7 +4,7 @@
 //  js/forest.js — Isometric grid exploration
 // ============================================================
 
-const GRID_SIZE = 7;
+const GRID_SIZE = 11;
 const TILE_HW = 64;  // half-width of diamond
 const TILE_HH = 32;  // half-height of diamond
 const TILE_SZ = TILE_HW * 2; // full tile square size (128px)
@@ -14,7 +14,7 @@ let gridTerrain = [];
 // Hint tiles: [{row, col, speciesId}]
 let hintTiles = [];
 // Player position on the grid
-let playerPos = { row: 4, col: 4 };
+let playerPos = { row: 5, col: 5 };
 // Hint spawn timer handle
 let hintTimer = null;
 
@@ -53,11 +53,11 @@ function initGrid() {
   for (let r = 0; r < GRID_SIZE; r++) {
     gridTerrain[r] = [];
     for (let c = 0; c < GRID_SIZE; c++) {
-      // Weighted random terrain, more grass near center
-      const distFromCenter = Math.abs(r - 4) + Math.abs(c - 4);
+      // Weighted random terrain, more grass near center (center is 5,5)
+      const distFromCenter = Math.abs(r - 5) + Math.abs(c - 5);
       if (distFromCenter <= 2) {
         gridTerrain[r][c] = terrains[Math.floor(Math.random() * 3)]; // mostly grass
-      } else if (distFromCenter <= 4) {
+      } else if (distFromCenter <= 5) {
         gridTerrain[r][c] = terrains[Math.floor(Math.random() * 4)]; // grass/bush
       } else {
         gridTerrain[r][c] = terrains[2 + Math.floor(Math.random() * 3)]; // bush/trees
@@ -284,10 +284,10 @@ function walkPath(path, idx) {
   // Check for encounter on this step
   const hint = hintTiles.find(h => h.row === step.row && h.col === step.col);
   const isHint = !!hint;
-  const encounterChance = isHint ? 0.95 : 0.35;
+  const encounterChance = isHint ? 0.95 : 0.10;
   const encounter = Math.random() < encounterChance;
 
-  console.log('[Bantso:forest] Step', idx + 1, '| pos:', step.row, step.col, '| hint:', isHint ? hint.speciesId : 'none', '| encounter:', encounter ? 'YES!' : 'no');
+  console.log('[Bantso:forest] Step', idx + 1, '| pos:', step.row, step.col, '| hint:', isHint ? hint.speciesId : 'none', '| encounter:', encounter ? (isHint ? 'hint' : 'AMBUSH!') : 'no');
 
   if (encounter) {
     // Clear hints since we're entering battle
@@ -295,7 +295,8 @@ function walkPath(path, idx) {
     if (hintTimer) clearTimeout(hintTimer);
     // Keep busy=true until startBattle takes over (it resets busy)
     const forcedSpecies = isHint ? hint.speciesId : null;
-    setTimeout(() => startBattle(forcedSpecies), 150);
+    const ambush = !isHint; // random encounters = ambush
+    setTimeout(() => startBattle(forcedSpecies, ambush), 150);
   } else {
     setTimeout(() => walkPath(path, idx + 1), 350);
   }

@@ -28,19 +28,31 @@ function createEnemyPokemon(species) {
   };
 }
 
-function startBattle(forcedSpeciesId) {
+function startBattle(forcedSpeciesId, ambush) {
   const species = forcedSpeciesId ? getSpecies(forcedSpeciesId) : getWildPokemonSpecies();
   const enemy = createEnemyPokemon(species);
   if (!enemy) return;
 
-  console.log('[Bantso:battle] Starting battle with', enemy.name);
-  Game.battle = { enemy: enemy, turn: 'player' };
+  console.log('[Bantso:battle] Starting battle with', enemy.name, ambush ? '(AMBUSH!)' : '');
+  Game.battle = { enemy: enemy, turn: ambush ? 'enemy' : 'player' };
   Game.busy = false;
 
   showScreen('battle');
   renderBattle();
-  $('#battle-msg').textContent = enemy.name + ' appeared!';
-  flashScreen(300);
+  if (ambush) {
+    // Ambush: red flash, enemy attacks first
+    $('#battle-msg').textContent = '⚠️ Ambush! ' + enemy.name + '!';
+    $('#battle-msg').style.color = '#ff6666';
+    flashScreen(250);
+    // Briefly flash red instead of white
+    const flashEl = $('#flash');
+    flashEl.style.background = '#ff0000';
+    setTimeout(() => { flashEl.style.background = 'white'; }, 300);
+  } else {
+    $('#battle-msg').textContent = enemy.name + ' appeared!';
+    $('#battle-msg').style.color = '';
+    flashScreen(300);
+  }
   Game.audio.play('encounter');
 
   setTimeout(() => {
@@ -53,6 +65,16 @@ function startBattle(forcedSpeciesId) {
       if (enemySprite) enemySprite.classList.remove('enter-right');
     }, 400);
   }, 100);
+
+  if (ambush) {
+    // Enemy strikes first after entrance animation
+    updateBattleActions();
+    setTimeout(() => {
+      $('#battle-msg').style.color = '';
+      $('#battle-msg').textContent = enemy.name + ' attacks first!';
+      setTimeout(() => enemyTurn(), 600);
+    }, 600);
+  }
 }
 
 function renderBattle() {
