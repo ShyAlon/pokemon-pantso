@@ -37,6 +37,10 @@ function setupEventHandlers() {
     console.log('[Bantso:event] SWAP button clicked');
     openTeamOverlay('battle');
   });
+  $('#btn-flee').addEventListener('click', () => {
+    console.log('[Bantso:event] FLEE button clicked');
+    playerFlee();
+  });
 
   // Team overlay
   $('#team-close').addEventListener('click', () => {
@@ -108,7 +112,6 @@ function setupEventHandlers() {
     showScreen('forest');
     renderForestScreen();
     updateProgressBar();
-    updateExploreButton();
   });
   $('#league-restart-btn').addEventListener('click', () => {
     console.log('[Bantso:event] League Restart clicked');

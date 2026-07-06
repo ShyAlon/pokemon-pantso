@@ -126,6 +126,10 @@ class SoundEngine {
     const playStep = (idx) => {
       if (!this._musicActive) return;
       const note = notes[idx % notes.length];
+      if (!note || !isFinite(note.f) || !isFinite(note.d)) {
+        console.warn('[Bantso:audio] Bad note at index', idx, note);
+        return;
+      }
       const durSec = note.d * beatMs / 1000;
       this._tone(note.f, durSec * 0.85, voiceType, volume);
       const tid = setTimeout(() => playStep(idx + 1), durSec * 1000);
@@ -137,8 +141,8 @@ class SoundEngine {
   // ---- Tone generators ----
   _tone(freq, duration, type='square', volume=0.15, startTime=0) {
     if (!this.ctx) return;
-    if (!isFinite(freq) || !isFinite(duration) || !isFinite(volume)) {
-      console.warn('[Bantso:audio] _tone skipped — non-finite param', {freq, duration, volume});
+    if (!isFinite(freq) || !isFinite(duration) || !isFinite(volume) || !isFinite(startTime)) {
+      console.warn('[Bantso:audio] _tone skipped — non-finite param', {freq, duration, volume, startTime});
       return;
     }
     const osc = this.ctx.createOscillator();
@@ -155,6 +159,7 @@ class SoundEngine {
 
   _noise(duration, volume=0.1, startTime=0) {
     if (!this.ctx) return;
+    if (!isFinite(duration) || !isFinite(volume) || !isFinite(startTime)) return;
     const bufSize = this.ctx.sampleRate * duration;
     const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
     const data = buf.getChannelData(0);

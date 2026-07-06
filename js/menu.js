@@ -68,7 +68,6 @@ async function doRestart() {
   showScreen('forest');
   renderForestScreen();
   updateProgressBar();
-  updateExploreButton();
   console.log('[Bantso:menu] Restart complete');
 }
 
@@ -101,6 +100,5 @@ async function doNewGame() {
   showScreen('forest');
   renderForestScreen();
   updateProgressBar();
-  updateExploreButton();
   console.log('[Bantso:menu] New game complete');
 }

@@ -39,7 +39,6 @@ async function init() {
   // Render initial screen
   renderForestScreen();
   updateProgressBar();
-  updateExploreButton();
 
   if (Game.leagueUnlocked) {
     console.log('[Bantso:app] League is unlocked — showing league button');

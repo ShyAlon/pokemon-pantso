@@ -89,11 +89,13 @@ function renderBattle() {
   setSpriteImage('ally-img', 'ally-emoji', activePkmn.speciesId);
   $('#ally-name').textContent = allySp.name;
   $('#ally-types').innerHTML = renderTypeBadges(allySp.types);
+  renderMatchup('ally-matchup', allySp.types, enemySp.types);
   renderHealthBar('ally-hp-bar', 'ally-hp-text', activePkmn.currentHp, playerStats.maxHp);
 
   setSpriteImage('enemy-img', 'enemy-emoji', enemy.speciesId);
   $('#enemy-name').textContent = enemy.name;
   $('#enemy-types').innerHTML = renderTypeBadges(enemySp.types);
+  renderMatchup('enemy-matchup', enemySp.types, allySp.types);
   renderHealthBar('enemy-hp-bar', 'enemy-hp-text', enemy.currentHp, enemy.maxHp);
 
   updateBattleActions();
@@ -112,11 +114,29 @@ function renderHealthBar(barId, textId, current, max) {
   else bar.classList.add('red');
 }
 
+// Show type matchup indicator — atkTypes vs defTypes
+function renderMatchup(elId, atkTypes, defTypes) {
+  const el = $(`#${elId}`);
+  if (!el) return;
+  const eff = getTypeEffectiveness(atkTypes, defTypes);
+  el.classList.remove('strong', 'weak');
+  if (eff.multiplier > 1.5) {
+    el.textContent = '⚔️ Advantage!';
+    el.classList.add('strong');
+  } else if (eff.multiplier < 0.75) {
+    el.textContent = '🛡️ Resist…';
+    el.classList.add('weak');
+  } else {
+    el.textContent = '';
+  }
+}
+
 function updateBattleActions() {
   const disabled = Game.busy || Game.battle?.turn !== 'player';
   $('#btn-attack').disabled = disabled;
   $('#btn-catch').disabled = disabled;
   $('#btn-swap').disabled = disabled;
+  $('#btn-flee').disabled = disabled;
 }
 
 // Narration templates — Pokémon name + action, 20 variants
@@ -307,6 +327,57 @@ function playerSwap(pokemonId) {
   saveGame();
 }
 
+// Attempt to flee from battle — 50% success, risk of losing a Pokémon
+function playerFlee() {
+  const isLeague = !!Game.leagueBattle;
+  const battle = isLeague ? Game.leagueBattle : Game.battle;
+  if (Game.busy || !battle || battle.turn !== 'player') return;
+  console.log('[Bantso:battle] Player attempts to flee | league:', isLeague);
+  Game.busy = true;
+  battle.turn = 'animating';
+  updateBattleActions();
+
+  const success = Math.random() < 0.50;
+
+  if (success) {
+    $('#battle-msg').textContent = 'Got away safely!';
+    Game.audio.play('click');
+    setTimeout(() => isLeague ? endLeagueBattle('fled') : endBattle('fled'), 800);
+  } else {
+    // Failed to flee — enemy attacks + risk of losing a Pokémon
+    const loseMon = Math.random() < 0.25;
+    const candidates = Game.collection.filter(p => p.speciesId !== 'pikachu');
+    let lostName = null;
+
+    if (loseMon && candidates.length > 0) {
+      const victim = candidates[Math.floor(Math.random() * candidates.length)];
+      lostName = getSpecies(victim.speciesId).name;
+      console.warn('[Bantso:battle] Flee failed — lost', lostName);
+      Game.collection = Game.collection.filter(p => p.id !== victim.id);
+      Game.caughtSpecies = [...new Set(Game.collection.map(p => p.speciesId))];
+      Game.caughtCount = Game.collection.length;
+      if (Game.activePokemonId === victim.id && Game.collection.length > 0) {
+        Game.activePokemonId = Game.collection[0].id;
+      }
+    }
+
+    const msg = lostName
+      ? 'Failed! Lost ' + lostName + '! Enemy attacks!'
+      : 'Failed to flee! Enemy attacks!';
+    $('#battle-msg').textContent = msg;
+    $('#battle-msg').style.color = '#ff6666';
+    Game.audio.play('catchFail');
+
+    setTimeout(() => {
+      $('#battle-msg').style.color = '';
+      battle.turn = 'enemy';
+      updateBattleActions();
+      $('#battle-msg').textContent = battle.enemy.name + ' attacks!';
+      setTimeout(() => isLeague ? leagueEnemyTurn() : enemyTurn(), 600);
+    }, 1200);
+  }
+}
+
 function endBattle(result) {
   console.log('[Bantso:battle] endBattle result:', result);
   Game.busy = true;
@@ -315,6 +386,9 @@ function endBattle(result) {
     showCheckmark(1500);
     spawnConfetti(50);
     $('#battle-msg').textContent = result === 'caught' ? 'Gotcha!' : 'You Win!';
+  } else if (result === 'fled') {
+    // Fleeing — just return to forest/arena, no fanfare
+    Game.audio.play('click');
   } else {
     $('#battle-msg').textContent = 'Try Again!';
   }
@@ -357,7 +431,6 @@ function endBattle(result) {
         renderForestScreen();
       }
 
-      updateExploreButton();
       updateProgressBar();
     }, 1800);
   });

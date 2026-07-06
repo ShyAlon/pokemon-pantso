@@ -25,29 +25,33 @@ The service worker (v2) caches all game files on first load, so the game works c
 
 ```
 pokemon/
-├── index.html              ← Thin shell (202 lines) — HTML layout + script tags
+├── index.html              ← Thin shell (~200 lines) — HTML layout + script tags
 ├── manifest.json           ← PWA manifest (name, icons, display mode)
 ├── sw.js                   ← Service worker (cache-first offline strategy, v2)
 ├── icon.svg                ← Pokéball app icon
+├── package.json            ← Playwright test dependency
+├── playwright.config.js    ← Playwright configuration
 ├── README.md               ← This file
 ├── css/
-│   └── game.css            ← All styles (912 lines) — screens, animations, layout
-└── js/
-    ├── app.js              ← Entry point, version banner, init sequence
-    ├── state.js            ← Central Game state object
-    ├── db.js               ← IndexedDB wrapper (open, get, put, clear)
-    ├── persist.js          ← Save/load game, heal Pokémon, clear all data
-    ├── audio.js            ← Web Audio API: SFX + procedural theme music
-    ├── species.js          ← 20 Pokémon: stats, types, lore, type effectiveness
-    ├── ui.js               ← DOM helpers ($, $$), showScreen, progress bar
-    ├── effects.js          ← Animations: confetti, shake, flash, catch sequence
-    ├── battle.js           ← Forest battle system + attack narration
-    ├── league.js           ← League arena: infinite scaling battles
-    ├── forest.js           ← Isometric grid exploration, pathfinding, hints
-    ├── team.js             ← Team selection overlay
-    ├── lore.js             ← Pokémon lore modal (info popup)
-    ├── menu.js             ← ☰ Menu: restart, new game, confirmation
-    └── events.js           ← All event listener setup
+│   └── game.css            ← All styles (~920 lines) — screens, animations, layout
+├── js/
+│   ├── app.js              ← Entry point, version banner, init sequence
+│   ├── state.js            ← Central Game state object
+│   ├── db.js               ← IndexedDB wrapper (open, get, put, clear)
+│   ├── persist.js          ← Save/load game, heal Pokémon, clear all data
+│   ├── audio.js            ← Web Audio API: SFX + procedural theme music
+│   ├── species.js          ← 20 Pokémon: stats, types, lore, type effectiveness
+│   ├── ui.js               ← DOM helpers ($, $$), showScreen, progress bar
+│   ├── effects.js          ← Animations: confetti, shake, flash, catch sequence
+│   ├── battle.js           ← Forest battle system + attack narration + flee
+│   ├── league.js           ← League arena: infinite scaling battles
+│   ├── forest.js           ← Isometric grid exploration, pathfinding, hints
+│   ├── team.js             ← Team selection overlay
+│   ├── lore.js             ← Pokémon lore modal (info popup)
+│   ├── menu.js             ← ☰ Menu: restart, new game, confirmation
+│   └── events.js           ← All event listener setup
+└── tests/
+    └── game.spec.js        ← Playwright E2E test suite (20 tests)
 ```
 
 ### Load Order
@@ -65,17 +69,17 @@ lore.js → menu.js → events.js → app.js
 ## Core Game Loop
 
 ```
-[Forest Exploration] → [Turn-Based Battle] → [Catch or Defeat] → [Level Up] → … → [League Unlocked]
-                                                                                         ↓
-                                                                                  [Infinite Arena]
+[Forest Exploration] → [Turn-Based Battle] → [Catch / Defeat / Flee] → [Level Up] → … → [League Unlocked]
+                                                                                              ↓
+                                                                                       [Infinite Arena]
 ```
 
 ### 1. Forest Exploration (Isometric View)
 
-- **7×7 isometric diamond-tile grid** with procedurally generated terrain: grass, bushes, and trees
+- **11×11 isometric diamond-tile grid** with procedurally generated terrain: grass, bushes, and trees
 - The player controls a **child character** (blue cap, red shirt, backpack) by tapping any tile
 - The character walks there via **BFS shortest-path** — each step takes ~350ms
-- Every step has a **35% encounter chance** with a wild Pokémon
+- Every step has a **10% encounter chance** with a wild Pokémon
 - After reaching level 10, exploration ends and the League unlocks
 
 #### Pokémon Hints
@@ -84,6 +88,13 @@ lore.js → menu.js → events.js → app.js
 - Stepping onto a hint tile has a **95% encounter chance** with that exact species
 - Hints refresh every 12 seconds
 
+#### Ambush
+When a **random encounter** triggers (not from a hint tile):
+- The battle screen flashes **red** instead of white
+- The message reads **"⚠️ Ambush! Charmander!"**
+- The **enemy attacks first**, skipping the player's opening turn
+- After the ambush strike, normal turn order resumes
+
 ---
 
 ### 2. Turn-Based Battle
@@ -91,8 +102,9 @@ lore.js → menu.js → events.js → app.js
 #### Layout
 - Split screen: player's Pokémon on the left, wild Pokémon on the right
 - Colored health bars (green → yellow → red)
-- Type badges displayed below each Pokémon's name
-- Three action buttons at the bottom: **ATTACK**, **CATCH**, **SWAP**
+- **Type badges** (colored pills like `FIR`, `WAT`, `ELE`) below each name
+- **Matchup indicators** showing type advantage/disadvantage before attacking
+- Four action buttons at the bottom: **ATTACK**, **CATCH**, **SWAP**, **RUN**
 
 #### Actions
 
@@ -101,12 +113,13 @@ lore.js → menu.js → events.js → app.js
 | **ATTACK** | Red ⚔️ | Deals damage with type effectiveness applied |
 | **CATCH** | Blue 🔵 | Attempts to catch the wild Pokémon |
 | **SWAP** | Yellow 🔄 | Opens team overlay to switch active Pokémon |
+| **RUN** | Grey 🏃 | Attempt to flee (see below) |
 
 #### Battle Flow
-1. **Player turn**: choose an action
+1. **Player turn**: choose an action (or enemy attacks first during an Ambush)
 2. **Animation plays**: damage/catch logic runs, sprites shake, health bars update
 3. **Enemy turn**: enemy attacks after a 1.2s delay
-4. Repeat until win, catch, or loss
+4. Repeat until win, catch, flee, or loss
 
 #### Level Scaling
 - Wild enemy **level matches the player's current level**
@@ -133,7 +146,12 @@ Dual-type defenders multiply both matchups. The battle message shows the effecti
 
 > *"Pikachu strikes! — 6 HP — Not very effective…"*
 
-Type badges (colored pills like `FIR`, `WAT`, `ELE`) are shown in the battle screen and team overlay.
+#### Matchup Indicators
+Before attacking, each side shows a persistent matchup label under the type badges:
+- **⚔️ Advantage!** (green) — that Pokémon's attacks are super effective
+- **🛡️ Resist…** (red) — the opponent's types resist those attacks
+
+This lets young players see at a glance whether they have the upper hand.
 
 #### Attack Narration
 20 randomized templates with the Pokémon's name and action, e.g.:
@@ -162,7 +180,22 @@ On failure: **Pokéball shakes twice**, cracks open, red **✕** appears.
 
 ---
 
-### 5. Leveling & Progression
+### 5. Fleeing (RUN)
+
+The **🏃 RUN** button appears in all battles:
+
+- **50%** chance to escape — returns to forest/arena with *"Got away safely!"*
+- **50%** chance to fail:
+  - Enemy gets a free attack
+  - **25%** chance of **losing a random Pokémon** from your collection
+  - **Pikachu is always safe** — never selected as the loss victim
+  - Lost Pokémon are permanently removed; the active Pokémon auto-switches if needed
+
+> *"Failed! Lost Charmander! Enemy attacks!"*
+
+---
+
+### 6. Leveling & Progression
 
 ```
 Player_Level = ⌊ Unique_Pokémon_Caught / 2 ⌋ + 1
@@ -181,11 +214,12 @@ At level 10:
 
 ---
 
-### 6. League Arena (Infinite Mode)
+### 7. League Arena (Infinite Mode)
 
 After unlocking the League, an infinite arena mode becomes available:
 
-- **🏟️ LEAGUE** button appears alongside the forest
+- **🏟️ LEAGUE** button appears on the forest screen
+- Arena has a **soccer field theme** — green pitch with white boundary lines, center circle, goals at each end, and crowd stands
 - Arena battles use the same combat system but with **no CATCH option**
 - Opponents are "Champion" versions of random Pokémon
 - **Opponents scale infinitely** with league wins:
@@ -196,21 +230,22 @@ enemyMaxHp = playerMaxHp × 0.70 × scale
 enemyDamage = playerMaxHp × (0.15 + leagueWins × 0.015)
 ```
 
-- Win counter displayed in the arena
+- Win counter displayed on the field
 - Unique **arena victory fanfare** on each win
+- **RUN** still available in arena battles
 
 ---
 
-### 7. Team Collection
+### 8. Team Collection
 
 - Accessible from the forest (🎒 button) or during battle (SWAP)
-- Grid of Pokémon cards showing sprite, name, type badges, HP bar
+- Grid of Pokémon cards showing sprite, name, **type badges**, HP bar
 - Tap a card to set it as the active Pokémon
 - **ℹ️ info button** on each card (and on battle sprites) opens a lore modal with a short, kid-friendly description
 
 ---
 
-### 8. Menu & Data Management
+### 9. Menu & Data Management
 
 The **☰ menu button** in the progress bar offers:
 
@@ -267,12 +302,13 @@ Game state is saved to **IndexedDB** (via a thin native wrapper in `db.js`):
 
 | Effect | Trigger |
 |--------|---------|
-| White flash | Encounter start |
+| White flash | Encounter start (hint) |
+| **Red flash** | Ambush encounter |
 | Sprite shake (300ms) | Attack hit |
 | Slash overlay (💥) | Attack hit |
 | Confetti burst (50 pieces) | Victory / catch success |
 | Green checkmark (✅) | Victory |
-| Red crossmark (❌) | Failed catch |
+| Red crossmark (❌) | Failed catch / flee |
 | Pokéball wobble (2–3 shakes) | Catch attempt |
 | Level-up glow (golden) | Level up |
 | Healing sparkles (✨💚) | After battle / level up |
@@ -325,15 +361,70 @@ Every significant action logs to the browser console with a `[Bantso:module]` pr
 [Bantso:state]  — State initialization
 [Bantso:persist]— Save/load game data
 [Bantso:ui]     — Screen changes, progress bar updates
-[Bantso:battle] — Damage, catch attempts, type effectiveness
+[Bantso:battle] — Damage, catch attempts, type effectiveness, flee
 [Bantso:league] — League battles, win tracking
-[Bantso:forest] — Tile clicks, pathfinding, hint spawns
+[Bantso:forest] — Tile clicks, pathfinding, hint spawns, ambush
 [Bantso:team]   — Team overlay open/close, Pokémon selection
 [Bantso:lore]   — Lore modal
 [Bantso:menu]   — Restart, new game, confirmations
 [Bantso:events] — Button clicks, event registration
 [Bantso:SW]     — Service worker lifecycle
 ```
+
+---
+
+## Testing
+
+Automated end-to-end tests are written with **Playwright**. The test suite validates all game systems and detects console errors and exceptions.
+
+### Setup (first time)
+
+```bash
+cd /path/to/pokemon
+npm install
+npx playwright install chromium
+```
+
+### Running Tests
+
+```bash
+npm test               # run all 20 tests (headless)
+npm run test:headed    # run with visible browser window
+npm run test:debug     # step through tests one at a time
+```
+
+The Playwright config automatically starts `python3 -m http.server 8080` before running tests and shuts it down afterward. IndexedDB is cleared between tests for clean state.
+
+### Viewing Results
+
+- **Terminal output**: pass/fail list with timing for each test
+- **HTML report**: after a run, open `playwright-report/index.html` in a browser for a rich visual report with screenshots of failures
+- **Trace viewer**: on test retries, run `npx playwright show-trace test-results/.../trace.zip` for a timeline of every action
+
+### Test Coverage
+
+| # | Test | What It Validates |
+|---|------|-------------------|
+| 1 | Page load | Forest grid renders, child character visible, no errors |
+| 2 | Version banner | `v2.1.0` and `INIT COMPLETE` logged to console |
+| 3 | Species loaded | All 20 species initialized |
+| 4 | Tile click | Child character moves on grid click |
+| 5 | Team overlay | Opens from forest, shows cards with type badges, closes |
+| 6 | Lore modal | Opens from team card info button, shows lore text |
+| 7 | Menu dropdown | Opens, shows Restart/New Game, closes |
+| 8 | Confirmation | Restart shows Yes/No dialog, cancels correctly |
+| 9 | Progress bar | Shows correct initial values |
+| 10 | Forest hints | Hint tiles with floating emojis appear |
+| 11 | Battle screen | All 4 action buttons visible, type badges, sprites |
+| 12 | No audio errors | Zero `AudioParam` or `non-finite` errors |
+| 13 | Service worker | Registers successfully |
+| 14 | League arena | Soccer field, win counter, FIGHT button render |
+| 15 | League battle | FIGHT triggers battle with "Champion" enemy, CATCH hidden |
+| 16 | Flee button | RUN button present during battle |
+| 17 | Matchup indicators | ⚔️/🛡️ labels render for both sides |
+| 18 | Music system | Music starts on screen change, no errors |
+| 19 | Persistence | Catching Charmander persists across page reload |
+| 20 | Stress test | Multiple tile clicks + menu + team overlay with zero errors |
 
 ---
 
@@ -354,3 +445,4 @@ Every significant action logs to the browser console with a `[Bantso:module]` pr
 - **90% win rate**: enemy HP is capped at 70% of the player's, ensuring most fights are winnable
 - **Visual feedback**: every action has a distinct animation and sound
 - **Kid-friendly**: bright colors, cute character, encouraging messages, no punishing mechanics
+- **Zero dependencies at runtime**: pure HTML/CSS/JS — no frameworks, no CDNs needed after sprite caching

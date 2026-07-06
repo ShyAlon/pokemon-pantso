@@ -14,7 +14,6 @@ function showScreen(name) {
   const screenEl = $(`#${name}-screen`);
   if (screenEl) { screenEl.classList.add('active'); screenEl.classList.add('fade-in'); }
 
-  const exploreBtn = $('#explore-btn');
   const leagueBtn = $('#league-btn');
   const teamBtn = $('#team-access-btn');
 
@@ -28,19 +27,9 @@ function showScreen(name) {
   }
 
   if (name === 'forest') {
-    if (exploreBtn) exploreBtn.style.display = 'none'; // grid click replaces EXPLORE
     if (leagueBtn) leagueBtn.style.display = Game.leagueUnlocked ? 'flex' : 'none';
     if (teamBtn) teamBtn.style.display = 'flex';
-  } else if (name === 'league-arena') {
-    if (exploreBtn) exploreBtn.style.display = 'none';
-    if (leagueBtn) leagueBtn.style.display = 'none';
-    if (teamBtn) teamBtn.style.display = 'none';
-  } else if (name === 'league') {
-    if (exploreBtn) exploreBtn.style.display = 'none';
-    if (leagueBtn) leagueBtn.style.display = 'none';
-    if (teamBtn) teamBtn.style.display = 'none';
   } else {
-    if (exploreBtn) exploreBtn.style.display = 'none';
     if (leagueBtn) leagueBtn.style.display = 'none';
     if (teamBtn) teamBtn.style.display = 'none';
   }
@@ -64,10 +53,3 @@ function updateProgressBar() {
   console.log('[Bantso:ui] Progress updated | level:', level, '| caught:', Game.totalUniqueCaught, '| bar:', Math.round(pct) + '%');
 }
 
-function updateExploreButton() {
-  const btn = $('#explore-btn');
-  if (!btn) return;
-  if (Game.leagueUnlocked && Game.isMaxLevel) {
-    btn.style.display = 'none';
-  }
-}

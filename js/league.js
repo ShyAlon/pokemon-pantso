@@ -75,11 +75,13 @@ function renderLeagueBattle() {
   setSpriteImage('ally-img', 'ally-emoji', activePkmn.speciesId);
   $('#ally-name').textContent = allySp.name;
   $('#ally-types').innerHTML = renderTypeBadges(allySp.types);
+  renderMatchup('ally-matchup', allySp.types, enemySp.types);
   renderHealthBar('ally-hp-bar', 'ally-hp-text', activePkmn.currentHp, playerStats.maxHp);
 
   setSpriteImage('enemy-img', 'enemy-emoji', enemy.speciesId);
   $('#enemy-name').textContent = enemy.name;
   $('#enemy-types').innerHTML = renderTypeBadges(enemySp.types);
+  renderMatchup('enemy-matchup', enemySp.types, allySp.types);
   renderHealthBar('enemy-hp-bar', 'enemy-hp-text', enemy.currentHp, enemy.maxHp);
 
   $('#btn-catch').style.display = 'none';
@@ -203,6 +205,8 @@ function endLeagueBattle(result) {
     spawnConfetti(50);
     $('#battle-msg').textContent = 'Victory!';
     saveGame();
+  } else if (result === 'fled') {
+    Game.audio.play('click');
   } else {
     $('#battle-msg').textContent = 'Try Again!';
   }

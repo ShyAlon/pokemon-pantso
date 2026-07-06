@@ -62,6 +62,7 @@
           <button class="info-icon" id="ally-info" title="Info">ℹ️</button>
           <div class="pokemon-name" id="ally-name"></div>
           <div class="type-badges" id="ally-types"></div>
+          <div class="matchup-tag" id="ally-matchup"></div>
           <div class="health-bar-container">
             <div class="health-bar green" id="ally-hp-bar"></div>
           </div>
@@ -75,6 +76,7 @@
           <button class="info-icon" id="enemy-info" title="Info">ℹ️</button>
           <div class="pokemon-name" id="enemy-name"></div>
           <div class="type-badges" id="enemy-types"></div>
+          <div class="matchup-tag" id="enemy-matchup"></div>
           <div class="health-bar-container">
             <div class="health-bar green" id="enemy-hp-bar"></div>
           </div>
@@ -91,6 +93,9 @@
         </button>
         <button class="action-btn swap" id="btn-swap">
           <span class="btn-icon">🔄</span> SWAP
+        </button>
+        <button class="action-btn flee" id="btn-flee">
+          <span class="btn-icon">🏃</span> RUN
         </button>
       </div>
     </div>
@@ -109,8 +114,10 @@
 
     <!-- League Arena Screen -->
     <div class="screen" id="league-arena-screen">
-      <div class="arena-bg"></div>
-      <div class="arena-crowd"></div>
+      <div class="arena-field"></div>
+      <div class="arena-goal left"></div>
+      <div class="arena-goal right"></div>
+      <div class="arena-stands"></div>
       <div class="arena-content">
         <div class="arena-trophy">🏟️</div>
         <div class="arena-title">League Arena</div>
@@ -131,9 +138,6 @@
 
   <!-- Action Button Area -->
   <div id="action-btn-area">
-    <button id="explore-btn">
-      <span class="btn-icon">🥾</span> EXPLORE
-    </button>
     <button id="league-btn">
       <span class="btn-icon">🏟️</span> LEAGUE
     </button>
