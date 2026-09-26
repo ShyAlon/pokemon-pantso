@@ -2,14 +2,14 @@
   "name": "Pokémon Bantso",
   "short_name": "Bantso",
   "description": "A Pokémon adventure game for kids",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#2d5a27",
   "theme_color": "#2d5a27",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

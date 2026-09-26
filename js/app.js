@@ -48,7 +48,7 @@ async function init() {
   // Register service worker for offline
   if ('serviceWorker' in navigator) {
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js');
+      const reg = await navigator.serviceWorker.register('sw.js');
       console.log('[Bantso:app] Service Worker registered:', reg.scope);
     } catch(e) {
       console.warn('[Bantso:app] Service Worker registration failed:', e);

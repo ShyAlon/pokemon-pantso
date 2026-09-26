@@ -85,6 +85,7 @@ function renderLeagueBattle() {
   renderHealthBar('enemy-hp-bar', 'enemy-hp-text', enemy.currentHp, enemy.maxHp);
 
   $('#btn-catch').style.display = 'none';
+  $('#btn-food').style.display = 'none';
   updateLeagueBattleActions();
 }
 
@@ -93,6 +94,8 @@ function updateLeagueBattleActions() {
   $('#btn-attack').disabled = disabled;
   $('#btn-catch').disabled = true;
   $('#btn-catch').style.display = 'none';
+  $('#btn-food').disabled = true;
+  $('#btn-food').style.display = 'none';
   $('#btn-swap').disabled = disabled;
 }
 
@@ -217,6 +220,7 @@ function endLeagueBattle(result) {
       Game.leagueBattle = null;
       Game.busy = false;
       $('#btn-catch').style.display = 'flex';
+      $('#btn-food').style.display = 'flex';
       showScreen('league-arena');
       renderLeagueArena();
       renderForestScreen();

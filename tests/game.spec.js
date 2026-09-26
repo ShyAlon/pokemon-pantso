@@ -36,6 +36,9 @@ async function clearStorage(page) {
 test.describe('Pokémon Bantso — End-to-End', () => {
 
   test.beforeEach(async ({ page }) => {
+    // IndexedDB is unavailable on about:blank. Visit the test server first so
+    // storage cleanup runs in the application's origin without loading the app.
+    await page.goto('/__test_reset__');
     await clearStorage(page);
   });
 
@@ -269,6 +272,7 @@ test.describe('Pokémon Bantso — End-to-End', () => {
       // Battle screen should have action buttons
       await expect(page.locator('#btn-attack')).toBeVisible();
       await expect(page.locator('#btn-catch')).toBeVisible();
+      await expect(page.locator('#btn-food')).toBeVisible();
       await expect(page.locator('#btn-swap')).toBeVisible();
       await expect(page.locator('#btn-flee')).toBeVisible();
 
@@ -286,6 +290,26 @@ test.describe('Pokémon Bantso — End-to-End', () => {
       // Still on forest — that's OK, the random override may not have worked
       console.log('Battle did not trigger — forest encounter works probabilistically');
     }
+  });
+
+  test('food chance uses matchup and drops exponentially after attacks', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+
+    const chances = await page.evaluate(() => ({
+      mutualAdvantage: getFoodSuccessChance(['Ghost'], ['Psychic', 'Ghost'], 0),
+      allyAdvantage: getFoodSuccessChance(['Water'], ['Fire'], 0),
+      enemyAdvantage: getFoodSuccessChance(['Fire'], ['Water'], 0),
+      untouched: getFoodSuccessChance(['Normal'], ['Normal'], 0),
+      attackedOnce: getFoodSuccessChance(['Normal'], ['Normal'], 1),
+      attackedTwice: getFoodSuccessChance(['Normal'], ['Normal'], 2),
+    }));
+
+    expect(chances.mutualAdvantage).toBeCloseTo(0.70);
+    expect(chances.allyAdvantage).toBeCloseTo(0.60);
+    expect(chances.enemyAdvantage).toBeCloseTo(0.35);
+    expect(chances.attackedOnce).toBeCloseTo(chances.untouched * 0.5);
+    expect(chances.attackedTwice).toBeCloseTo(chances.untouched * 0.25);
   });
 
   // ── 12. No Audio Crashes ──
@@ -392,10 +416,12 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await page.goto('/');
     await waitForGameReady(page);
 
-    // Force a league battle (which always renders matchup)
+    // Gastly and Abra are mutually super-effective, so both tags are shown.
     await page.evaluate(() => {
-      Game.leagueUnlocked = true;
-      if (typeof startLeagueBattle === 'function') startLeagueBattle();
+      const gastly = { id: 'gastly_test', speciesId: 'gastly', name: 'Gastly', currentHp: 85 };
+      Game.collection.push(gastly);
+      Game.activePokemonId = gastly.id;
+      startBattle('abra', false);
     });
     await page.waitForTimeout(1000);
 
@@ -463,6 +489,12 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await page.goto('/');
     await waitForGameReady(page);
 
+    // Keep exploratory clicks from randomly starting a battle in this UI test.
+    await page.evaluate(() => {
+      window.__testRandom = Math.random;
+      Math.random = () => 0.99;
+    });
+
     // Click several tiles
     const grid = page.locator('#iso-grid');
     const box = await grid.boundingBox();
@@ -474,6 +506,7 @@ test.describe('Pokémon Bantso — End-to-End', () => {
       await page.mouse.click(cx + (i % 2 === 0 ? 80 : -80), cy + (i < 2 ? -20 : 30));
       await page.waitForTimeout(400);
     }
+    await page.evaluate(() => { Math.random = window.__testRandom; });
 
     // Open and close menu
     await page.locator('#menu-btn').click();

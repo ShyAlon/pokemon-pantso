@@ -33,6 +33,10 @@ function setupEventHandlers() {
     console.log('[Bantso:event] CATCH button clicked');
     playerCatch();
   });
+  $('#btn-food').addEventListener('click', () => {
+    console.log('[Bantso:event] FOOD button clicked');
+    playerOfferFood();
+  });
   $('#btn-swap').addEventListener('click', () => {
     console.log('[Bantso:event] SWAP button clicked');
     openTeamOverlay('battle');

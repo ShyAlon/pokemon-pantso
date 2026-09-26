@@ -34,10 +34,12 @@ function startBattle(forcedSpeciesId, ambush) {
   if (!enemy) return;
 
   console.log('[Bantso:battle] Starting battle with', enemy.name, ambush ? '(AMBUSH!)' : '');
-  Game.battle = { enemy: enemy, turn: ambush ? 'enemy' : 'player' };
+  Game.battle = { enemy: enemy, turn: ambush ? 'enemy' : 'player', attacksReceived: 0 };
   Game.busy = false;
 
   showScreen('battle');
+  $('#btn-catch').style.display = 'flex';
+  $('#btn-food').style.display = 'flex';
   renderBattle();
   if (ambush) {
     // Ambush: red flash, enemy attacks first
@@ -135,6 +137,7 @@ function updateBattleActions() {
   const disabled = Game.busy || Game.battle?.turn !== 'player';
   $('#btn-attack').disabled = disabled;
   $('#btn-catch').disabled = disabled;
+  $('#btn-food').disabled = disabled;
   $('#btn-swap').disabled = disabled;
   $('#btn-flee').disabled = disabled;
 }
@@ -188,6 +191,7 @@ function playerAttack() {
   console.log('[Bantso:battle] Damage:', damage, '(raw:', rawDamage, 'x', eff.multiplier.toFixed(1), eff.label, ')');
 
   Game.battle.enemy.currentHp = Math.max(0, Game.battle.enemy.currentHp - damage);
+  Game.battle.attacksReceived = (Game.battle.attacksReceived || 0) + 1;
   Game.audio.play('attack');
   shakeSprite('#enemy-sprite');
   showSlash(300);
@@ -240,6 +244,67 @@ function playerCatch() {
       }, 1000);
     }, 1100);
   }
+}
+
+// Food works best when the two Pokémon recognize one another as worthy rivals.
+// Every attack received halves the chance again, so kindness works best early.
+function getFoodSuccessChance(allyTypes, enemyTypes, attacksReceived) {
+  const allyMultiplier = getTypeEffectiveness(allyTypes, enemyTypes).multiplier;
+  const enemyMultiplier = getTypeEffectiveness(enemyTypes, allyTypes).multiplier;
+  const allyAdvantage = allyMultiplier > 1.5;
+  const enemyAdvantage = enemyMultiplier > 1.5;
+  const allyResisted = allyMultiplier < 0.75;
+  const enemyResisted = enemyMultiplier < 0.75;
+
+  let baseChance = 0.50;
+  if (allyAdvantage && enemyAdvantage) baseChance = 0.70;
+  else if (allyAdvantage) baseChance = 0.60;
+  else if (enemyAdvantage) baseChance = 0.35;
+  else if (allyResisted && enemyResisted) baseChance = 0.45;
+
+  return baseChance * Math.pow(0.5, Math.max(0, attacksReceived || 0));
+}
+
+function playerOfferFood() {
+  if (Game.busy || !Game.battle || Game.battle.turn !== 'player') return;
+  Game.busy = true;
+  Game.battle.turn = 'animating';
+  updateBattleActions();
+
+  const activePkmn = Game.getActivePokemon();
+  if (!activePkmn) return;
+  const allySpecies = getSpecies(activePkmn.speciesId);
+  const enemy = Game.battle.enemy;
+  const enemySpecies = getSpecies(enemy.speciesId);
+  const chance = getFoodSuccessChance(
+    allySpecies.types,
+    enemySpecies.types,
+    Game.battle.attacksReceived
+  );
+  const success = Math.random() < chance;
+  console.log('[Bantso:battle] Food offer | attacks:', Game.battle.attacksReceived,
+    '| chance:', (chance * 100).toFixed(1) + '%', '| success:', success);
+
+  $('#battle-msg').textContent = 'Offering food to ' + enemy.name + '... 🍎';
+  Game.audio.play('click');
+
+  setTimeout(() => {
+    if (success) {
+      addPokemonToCollection(enemy);
+      $('#battle-msg').textContent = enemy.name + ' trusts you!';
+      endBattle('befriended');
+    } else {
+      Game.busy = false;
+      Game.battle.turn = 'enemy';
+      updateBattleActions();
+      $('#battle-msg').textContent = enemy.name + ' refused the food!';
+      setTimeout(() => {
+        if (!Game.battle) return;
+        $('#battle-msg').textContent = Game.battle.enemy.name + ' attacks!';
+        setTimeout(() => enemyTurn(), 600);
+      }, 1000);
+    }
+  }, 900);
 }
 
 function addPokemonToCollection(enemy) {
@@ -381,11 +446,13 @@ function playerFlee() {
 function endBattle(result) {
   console.log('[Bantso:battle] endBattle result:', result);
   Game.busy = true;
-  if (result === 'win' || result === 'caught') {
+  if (result === 'win' || result === 'caught' || result === 'befriended') {
     Game.audio.play('victory');
     showCheckmark(1500);
     spawnConfetti(50);
-    $('#battle-msg').textContent = result === 'caught' ? 'Gotcha!' : 'You Win!';
+    $('#battle-msg').textContent = result === 'caught'
+      ? 'Gotcha!'
+      : result === 'befriended' ? 'New Friend!' : 'You Win!';
   } else if (result === 'fled') {
     // Fleeing — just return to forest/arena, no fanfare
     Game.audio.play('click');

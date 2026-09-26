@@ -1,25 +1,25 @@
 const CACHE_NAME = 'pokemon-bantso-v2';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.svg',
-  '/css/game.css',
-  '/js/db.js',
-  '/js/audio.js',
-  '/js/species.js',
-  '/js/state.js',
-  '/js/persist.js',
-  '/js/ui.js',
-  '/js/effects.js',
-  '/js/battle.js',
-  '/js/league.js',
-  '/js/forest.js',
-  '/js/team.js',
-  '/js/lore.js',
-  '/js/menu.js',
-  '/js/events.js',
-  '/js/app.js'
+  './',
+  'index.html',
+  'manifest.json',
+  'icon.svg',
+  'css/game.css',
+  'js/db.js',
+  'js/audio.js',
+  'js/species.js',
+  'js/state.js',
+  'js/persist.js',
+  'js/ui.js',
+  'js/effects.js',
+  'js/battle.js',
+  'js/league.js',
+  'js/forest.js',
+  'js/team.js',
+  'js/lore.js',
+  'js/menu.js',
+  'js/events.js',
+  'js/app.js'
 ];
 
 self.addEventListener('install', event => {
@@ -67,7 +67,7 @@ self.addEventListener('fetch', event => {
         });
         return response;
       }).catch(() => {
-        return caches.match('/');
+        return caches.match('./');
       });
     })
   );
