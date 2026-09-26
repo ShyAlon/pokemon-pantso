@@ -67,7 +67,7 @@ async function loadGame() {
       Game.activePokemonId = collection[0].id;
     }
     // Rebuild caughtSpecies from actual collection — don't trust stale saved state
-    const uniqueFromCollection = [...new Set(collection.map(p => p.speciesId))];
+    const uniqueFromCollection = [...new Set(collection.map(p => p.baseSpeciesId || p.speciesId))];
     if (uniqueFromCollection.length !== Game.caughtSpecies.length) {
       console.log('[Bantso:persist] Rebuilding caughtSpecies from collection:', uniqueFromCollection.length, 'unique (was', Game.caughtSpecies.length, ')');
       Game.caughtSpecies = uniqueFromCollection;
@@ -78,6 +78,7 @@ async function loadGame() {
     const starter = {
       id: 'pikachu_01',
       speciesId: 'pikachu',
+      baseSpeciesId: 'pikachu',
       name: 'Pikachu',
       currentHp: 100,
     };

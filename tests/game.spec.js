@@ -188,6 +188,37 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await expect(page.locator('#lore-modal')).not.toHaveClass(/active/);
   });
 
+  test('evolves supported Pokémon from the inventory and persists the form', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+
+    await page.locator('#team-access-btn').click();
+    const pikachuCard = page.locator('.team-card').filter({ hasText: 'Pikachu' });
+    await expect(pikachuCard.locator('.evolve-btn')).toBeVisible();
+    await pikachuCard.locator('.evolve-btn').click();
+
+    const evolvedCard = page.locator('.team-card').filter({ hasText: 'Raichu' });
+    await expect(evolvedCard).toBeVisible();
+    await expect(evolvedCard.locator('.evolve-btn')).toHaveCount(0);
+
+    const evolvedState = await page.evaluate(() => ({
+      speciesId: Game.collection[0].speciesId,
+      baseSpeciesId: Game.collection[0].baseSpeciesId,
+      uniqueCaught: Game.totalUniqueCaught,
+      charmeleonEvolution: getEvolution('charmeleon').id,
+    }));
+    expect(evolvedState).toEqual({
+      speciesId: 'raichu',
+      baseSpeciesId: 'pikachu',
+      uniqueCaught: 1,
+      charmeleonEvolution: 'charizard',
+    });
+
+    await page.reload();
+    await waitForGameReady(page);
+    await expect.poll(() => page.evaluate(() => Game.collection[0].speciesId)).toBe('raichu');
+  });
+
   // ── 7. Menu Dropdown ──
   test('opens menu and shows restart/new game options', async ({ page }) => {
     await page.goto('/');

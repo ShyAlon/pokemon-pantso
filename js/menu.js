@@ -45,15 +45,19 @@ async function doRestart() {
   Game.busy = false;
   Game.scrollOffset = 0;
 
-  const starter = Game.collection.find(p => p.speciesId === 'pikachu');
+  const starter = Game.collection.find(p => (p.baseSpeciesId || p.speciesId) === 'pikachu');
   if (starter) {
     Game.collection = [starter];
+    starter.speciesId = 'pikachu';
+    starter.baseSpeciesId = 'pikachu';
+    starter.name = 'Pikachu';
     starter.currentHp = getSpecies('pikachu').baseHp;
     Game.activePokemonId = starter.id;
   } else {
     const newStarter = {
       id: 'pikachu_01',
       speciesId: 'pikachu',
+      baseSpeciesId: 'pikachu',
       name: 'Pikachu',
       currentHp: getSpecies('pikachu').baseHp,
     };
@@ -89,6 +93,7 @@ async function doNewGame() {
   Game.collection = [{
     id: 'pikachu_01',
     speciesId: 'pikachu',
+    baseSpeciesId: 'pikachu',
     name: 'Pikachu',
     currentHp: getSpecies('pikachu').baseHp,
   }];

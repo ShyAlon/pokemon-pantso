@@ -726,6 +726,20 @@ body {
   border-radius: 3px;
   background: #4CAF50;
 }
+.team-card .evolve-btn {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 2px solid #ffe36d;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #8f5de7, #6334af);
+  box-shadow: 0 3px 0 #44227c;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+.team-card .evolve-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #44227c; }
 .team-empty {
   text-align: center; padding: 40px;
   font-size: 18px; color: #999;

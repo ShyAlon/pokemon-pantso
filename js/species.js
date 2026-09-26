@@ -70,12 +70,59 @@ const SPECIES = [
   { id:'eevee',      name:'Eevee',      types:['Normal'],               dex:133, color:'#C4A46C', emoji:'🦊', baseHp:100, baseDmg:25, lore:'Its DNA is special. Can evolve into many different forms!' },
 ];
 
+// Evolved forms are available to the player's collection but not the wild pool.
+const EVOLVED_SPECIES = [
+  { id:'raichu',     name:'Raichu',     types:['Electric'],          dex:26,  color:'#E6A23C', emoji:'⚡', baseHp:110, baseDmg:30, lore:'Its long tail grounds its powerful electricity.' },
+  { id:'charmeleon', name:'Charmeleon', types:['Fire'],              dex:5,   color:'#E65A36', emoji:'🔥', baseHp:110, baseDmg:30, lore:'A fiery fighter whose tail flame burns brighter in battle.' },
+  { id:'ivysaur',    name:'Ivysaur',    types:['Grass','Poison'],    dex:2,   color:'#4FAF68', emoji:'🌺', baseHp:120, baseDmg:27, lore:'Sunlight helps the large bud on its back grow strong.' },
+  { id:'wartortle',  name:'Wartortle',  types:['Water'],             dex:8,   color:'#5796D1', emoji:'💧', baseHp:115, baseDmg:28, lore:'Its fluffy tail is a symbol of long life.' },
+  { id:'wigglytuff', name:'Wigglytuff', types:['Normal','Fairy'],    dex:40,  color:'#EFA4C3', emoji:'🎵', baseHp:135, baseDmg:24, lore:'Its soft body can inflate like a balloon.' },
+  { id:'persian',    name:'Persian',    types:['Normal'],            dex:53,  color:'#E8D79D', emoji:'🐈', baseHp:105, baseDmg:27, lore:'An elegant and quick Pokémon with a shining forehead gem.' },
+  { id:'golduck',    name:'Golduck',    types:['Water'],             dex:55,  color:'#3E78C4', emoji:'🌊', baseHp:115, baseDmg:28, lore:'A powerful swimmer that uses mysterious psychic skill.' },
+  { id:'arcanine',   name:'Arcanine',   types:['Fire'],              dex:59,  color:'#E87832', emoji:'🐕', baseHp:125, baseDmg:31, lore:'A brave, legendary-looking Pokémon that runs like the wind.' },
+  { id:'kadabra',    name:'Kadabra',    types:['Psychic'],           dex:64,  color:'#D5A33E', emoji:'🥄', baseHp:100, baseDmg:33, lore:'Its spoon focuses strong psychic waves.' },
+  { id:'machoke',    name:'Machoke',    types:['Fighting'],          dex:67,  color:'#687E94', emoji:'💪', baseHp:130, baseDmg:29, lore:'Its powerful muscles can lift enormous weights.' },
+  { id:'graveler',   name:'Graveler',   types:['Rock','Ground'],     dex:75,  color:'#887462', emoji:'🪨', baseHp:125, baseDmg:27, lore:'It rolls down mountain paths without slowing down.' },
+  { id:'rapidash',   name:'Rapidash',   types:['Fire'],              dex:78,  color:'#F4D9A2', emoji:'🐎', baseHp:115, baseDmg:31, lore:'Its blazing mane streams behind it as it races.' },
+  { id:'slowbro',    name:'Slowbro',    types:['Water','Psychic'],   dex:80,  color:'#D98FAB', emoji:'🦥', baseHp:140, baseDmg:25, lore:'A Shellder on its tail awakened stronger powers.' },
+  { id:'magneton',   name:'Magneton',   types:['Electric','Steel'], dex:82,  color:'#AEB8C2', emoji:'🧲', baseHp:110, baseDmg:31, lore:'Three Magnemite combine to create powerful magnetism.' },
+  { id:'dodrio',     name:'Dodrio',     types:['Normal','Flying'],   dex:85,  color:'#8A654D', emoji:'🐦', baseHp:115, baseDmg:29, lore:'Three heads plan together while its strong legs sprint.' },
+  { id:'dewgong',    name:'Dewgong',    types:['Water','Ice'],       dex:87,  color:'#DDECF4', emoji:'🦭', baseHp:125, baseDmg:27, lore:'It glides through icy seas using its streamlined body.' },
+  { id:'muk',        name:'Muk',        types:['Poison'],            dex:89,  color:'#694080', emoji:'🟣', baseHp:130, baseDmg:28, lore:'Its thick body absorbs waste and grows even larger.' },
+  { id:'haunter',    name:'Haunter',    types:['Ghost','Poison'],    dex:93,  color:'#624286', emoji:'👻', baseHp:100, baseDmg:32, lore:'It floats through walls and loves playing spooky tricks.' },
+  { id:'steelix',    name:'Steelix',    types:['Steel','Ground'],    dex:208, color:'#8C99A3', emoji:'⛓️', baseHp:140, baseDmg:26, lore:'Its underground body became harder than steel.' },
+  { id:'charizard',  name:'Charizard',  types:['Fire','Flying'],     dex:6,   color:'#DF6A32', emoji:'🐉', baseHp:130, baseDmg:35, lore:'It flies across the sky and breathes intensely hot flames.' },
+  { id:'venusaur',   name:'Venusaur',   types:['Grass','Poison'],    dex:3,   color:'#4B9E72', emoji:'🌺', baseHp:140, baseDmg:31, lore:'Its great flower gathers sunlight and releases a soothing scent.' },
+  { id:'blastoise',  name:'Blastoise',  types:['Water'],             dex:9,   color:'#4678A9', emoji:'💦', baseHp:135, baseDmg:32, lore:'Powerful water cannons rise from its sturdy shell.' },
+  { id:'alakazam',   name:'Alakazam',   types:['Psychic'],           dex:65,  color:'#C99132', emoji:'🥄', baseHp:115, baseDmg:37, lore:'Its remarkable mind controls two spoons with psychic power.' },
+  { id:'machamp',    name:'Machamp',    types:['Fighting'],          dex:68,  color:'#61798A', emoji:'💪', baseHp:150, baseDmg:33, lore:'Four powerful arms let it unleash many punches at once.' },
+  { id:'golem',      name:'Golem',      types:['Rock','Ground'],     dex:76,  color:'#756755', emoji:'🪨', baseHp:145, baseDmg:31, lore:'Its heavy shell is tough enough to withstand explosions.' },
+  { id:'magnezone',  name:'Magnezone',  types:['Electric','Steel'], dex:462, color:'#8294A6', emoji:'🧲', baseHp:130, baseDmg:35, lore:'A powerful magnetic field lets it hover through the air.' },
+  { id:'gengar',     name:'Gengar',     types:['Ghost','Poison'],    dex:94,  color:'#51406F', emoji:'👻', baseHp:115, baseDmg:36, lore:'It hides in shadows with a wide and mischievous grin.' },
+];
+
+const EVOLUTION_MAP = {
+  pikachu:'raichu', charmander:'charmeleon', bulbasaur:'ivysaur', squirtle:'wartortle',
+  jigglypuff:'wigglytuff', meowth:'persian', psyduck:'golduck', growlithe:'arcanine',
+  abra:'kadabra', machop:'machoke', geodude:'graveler', ponyta:'rapidash', slowpoke:'slowbro',
+  magnemite:'magneton', doduo:'dodrio', seel:'dewgong', grimer:'muk', gastly:'haunter', onix:'steelix',
+  charmeleon:'charizard', ivysaur:'venusaur', wartortle:'blastoise', kadabra:'alakazam',
+  machoke:'machamp', graveler:'golem', magneton:'magnezone', haunter:'gengar',
+};
+
+const ALL_SPECIES = [...SPECIES, ...EVOLVED_SPECIES];
+
 console.log('[Bantso:species] Loaded', SPECIES.length, 'species');
 
 function getSpecies(id) {
-  const s = SPECIES.find(s => s.id === id);
+  const s = ALL_SPECIES.find(s => s.id === id);
   if (!s) console.warn('[Bantso:species] Unknown species id:', id);
   return s || SPECIES[0];
+}
+
+function getEvolution(speciesId) {
+  const evolvedId = EVOLUTION_MAP[speciesId];
+  return evolvedId ? getSpecies(evolvedId) : null;
 }
 
 function getSpriteUrl(speciesId) {

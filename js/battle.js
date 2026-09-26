@@ -319,6 +319,7 @@ function addPokemonToCollection(enemy) {
   const newPkmn = {
     id: enemy.speciesId + '_' + (count + 1),
     speciesId: enemy.speciesId,
+    baseSpeciesId: enemy.speciesId,
     name: enemy.name,
     currentHp: species.baseHp + (Game.playerLevel - 1) * 15,
   };
@@ -411,7 +412,7 @@ function playerFlee() {
   } else {
     // Failed to flee — enemy attacks + risk of losing a Pokémon
     const loseMon = Math.random() < 0.25;
-    const candidates = Game.collection.filter(p => p.speciesId !== 'pikachu');
+    const candidates = Game.collection.filter(p => (p.baseSpeciesId || p.speciesId) !== 'pikachu');
     let lostName = null;
 
     if (loseMon && candidates.length > 0) {
@@ -419,7 +420,7 @@ function playerFlee() {
       lostName = getSpecies(victim.speciesId).name;
       console.warn('[Bantso:battle] Flee failed — lost', lostName);
       Game.collection = Game.collection.filter(p => p.id !== victim.id);
-      Game.caughtSpecies = [...new Set(Game.collection.map(p => p.speciesId))];
+      Game.caughtSpecies = [...new Set(Game.collection.map(p => p.baseSpeciesId || p.speciesId))];
       Game.caughtCount = Game.collection.length;
       if (Game.activePokemonId === victim.id && Game.collection.length > 0) {
         Game.activePokemonId = Game.collection[0].id;

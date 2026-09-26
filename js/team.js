@@ -33,6 +33,7 @@ function renderTeamGrid() {
     const stats = Game.getEffectiveStats(p);
     const hpPct = Math.max(0, (p.currentHp / stats.maxHp) * 100);
     const isActive = p.id === Game.activePokemonId;
+    const evolution = getEvolution(p.speciesId);
     const cardClass = isActive ? 'team-card active-pokemon' : 'team-card';
     html += `
       <div class="${cardClass}" data-pokemon-id="${p.id}" onclick="selectTeamPokemon('${p.id}')">
@@ -46,10 +47,33 @@ function renderTeamGrid() {
           <div class="mini-hp-fill" style="width:${hpPct}%"></div>
         </div>
         <div style="font-size:11px">${Math.max(0,p.currentHp)} / ${stats.maxHp}</div>
+        ${evolution && Game.teamContext !== 'battle' ? `<button class="evolve-btn" onclick="event.stopPropagation();evolvePokemon('${p.id}')">✨ EVOLVE</button>` : ''}
         ${isActive ? '<div style="font-size:12px;color:#FFD700">⭐ Active</div>' : ''}
       </div>`;
   }
   grid.innerHTML = html;
+}
+
+async function evolvePokemon(pokemonId) {
+  const pokemon = Game.collection.find(candidate => candidate.id === pokemonId);
+  if (!pokemon) return;
+  const evolution = getEvolution(pokemon.speciesId);
+  if (!evolution) return;
+
+  const oldSpeciesId = pokemon.speciesId;
+  const oldStats = Game.getEffectiveStats(pokemon);
+  const healthRatio = oldStats.maxHp > 0 ? pokemon.currentHp / oldStats.maxHp : 1;
+  pokemon.baseSpeciesId = pokemon.baseSpeciesId || oldSpeciesId;
+  pokemon.speciesId = evolution.id;
+  pokemon.name = evolution.name;
+  const newStats = Game.getEffectiveStats(pokemon);
+  pokemon.currentHp = Math.max(1, Math.round(newStats.maxHp * healthRatio));
+
+  console.log('[Bantso:team] Evolved', oldSpeciesId, 'into', evolution.id);
+  Game.audio.play('levelUp');
+  spawnConfetti(35);
+  await saveGame();
+  renderTeamGrid();
 }
 
 function selectTeamPokemon(pokemonId) {
