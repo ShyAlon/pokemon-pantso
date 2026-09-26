@@ -59,7 +59,7 @@
             <img class="poke-img" id="ally-img" src="" alt="" style="display:none" onerror="this.style.display='none';document.getElementById('ally-emoji').classList.add('show')" onload="this.style.display='block';document.getElementById('ally-emoji').classList.remove('show')">
             <span class="emoji-fallback show" id="ally-emoji"></span>
           </div>
-          <button class="info-icon" id="ally-info" title="Info">ℹ️</button>
+          <button class="info-icon" id="ally-info" title="Trainer guide" aria-label="Open trainer guide"><img src="trainer.svg" alt=""></button>
           <div class="pokemon-name" id="ally-name"></div>
           <div class="type-badges" id="ally-types"></div>
           <div class="matchup-tag" id="ally-matchup"></div>
@@ -73,7 +73,7 @@
             <img class="poke-img" id="enemy-img" src="" alt="" style="display:none" onerror="this.style.display='none';document.getElementById('enemy-emoji').classList.add('show')" onload="this.style.display='block';document.getElementById('enemy-emoji').classList.remove('show')">
             <span class="emoji-fallback show" id="enemy-emoji"></span>
           </div>
-          <button class="info-icon" id="enemy-info" title="Info">ℹ️</button>
+          <button class="info-icon" id="enemy-info" title="Trainer guide" aria-label="Open trainer guide"><img src="trainer.svg" alt=""></button>
           <div class="pokemon-name" id="enemy-name"></div>
           <div class="type-badges" id="enemy-types"></div>
           <div class="matchup-tag" id="enemy-matchup"></div>
@@ -174,6 +174,10 @@
       </div>
       <div class="lore-name" id="lore-name"></div>
       <div class="lore-text" id="lore-text"></div>
+      <div class="lore-matchups">
+        <div class="lore-matchup prey"><span>🎯 Prey</span><strong id="lore-prey"></strong></div>
+        <div class="lore-matchup predator"><span>⚠️ Predators</span><strong id="lore-predators"></strong></div>
+      </div>
       <button class="lore-close" id="lore-close">OK!</button>
     </div>
   </div>

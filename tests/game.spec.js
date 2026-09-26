@@ -161,6 +161,26 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     // Lore modal should appear
     await expect(page.locator('#lore-modal')).toHaveClass(/active/);
     await expect(page.locator('#lore-name')).not.toHaveText('');
+    await expect(infoBtn.locator('img')).toHaveAttribute('src', 'trainer.svg');
+    await expect(page.locator('#lore-prey')).not.toHaveText('');
+    await expect(page.locator('#lore-predators')).not.toHaveText('');
+
+    const matchupCounts = await page.evaluate(() => {
+      const matchups = getLoreMatchups('pikachu');
+      const pikachu = getSpecies('pikachu');
+      return {
+        prey: matchups.prey.length,
+        predators: matchups.predators.length,
+        preyAreAdvantaged: matchups.prey.every(example =>
+          getTypeEffectiveness(pikachu.types, example.types).multiplier > 1.5),
+        predatorsResist: matchups.predators.every(example =>
+          getTypeEffectiveness(pikachu.types, example.types).multiplier < 0.75),
+      };
+    });
+    expect(matchupCounts.prey).toBeLessThanOrEqual(2);
+    expect(matchupCounts.predators).toBeLessThanOrEqual(2);
+    expect(matchupCounts.preyAreAdvantaged).toBe(true);
+    expect(matchupCounts.predatorsResist).toBe(true);
 
     // Close lore
     await page.locator('#lore-close').click();

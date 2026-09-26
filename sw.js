@@ -1,9 +1,10 @@
-const CACHE_NAME = 'pokemon-bantso-v2';
+const CACHE_NAME = 'pokemon-bantso-v3';
 const urlsToCache = [
   './',
   'index.html',
   'manifest.json',
   'icon.svg',
+  'trainer.svg',
   'css/game.css',
   'js/db.js',
   'js/audio.js',

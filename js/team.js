@@ -36,7 +36,7 @@ function renderTeamGrid() {
     const cardClass = isActive ? 'team-card active-pokemon' : 'team-card';
     html += `
       <div class="${cardClass}" data-pokemon-id="${p.id}" onclick="selectTeamPokemon('${p.id}')">
-        <button class="card-info-icon" onclick="event.stopPropagation();showLore('${p.speciesId}')" title="Info">ℹ️</button>
+        <button class="card-info-icon" onclick="event.stopPropagation();showLore('${p.speciesId}')" title="Trainer guide" aria-label="Open ${species.name} trainer guide"><img src="trainer.svg" alt=""></button>
         <div class="mini-sprite" style="background:${species.color};background-image:url('${getSpriteUrl(p.speciesId)}');background-size:75%;background-position:center;background-repeat:no-repeat">
           <span class="emoji-fallback" style="font-size:38px">${species.emoji}</span>
         </div>
