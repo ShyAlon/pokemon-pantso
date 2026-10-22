@@ -128,6 +128,11 @@ async function evolvePokemon(pokemonId) {
   pokemon.baseSpeciesId = pokemon.baseSpeciesId || oldSpeciesId;
   pokemon.speciesId = evolution.id;
   pokemon.name = evolution.name;
+  // Evolution renews the Pokémon so Hard Mode cannot leave the team with no
+  // eligible fighter after another teammate is released.
+  pokemon.hardCooldown = 0;
+  pokemon.fightsSinceRest = 0;
+  delete pokemon.skipCooldownTick;
   const newStats = Game.getEffectiveStats(pokemon);
   pokemon.currentHp = Math.max(1, Math.round(newStats.maxHp * healthRatio));
 

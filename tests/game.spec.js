@@ -219,6 +219,27 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await expect.poll(() => page.evaluate(() => Game.collection[0].speciesId)).toBe('raichu');
   });
 
+  test('can start and attack in a fight after evolving', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+
+    const initialEnemyHp = await page.evaluate(async () => {
+      await doNewGame(true);
+      const starter = Game.getActivePokemon();
+      starter.hardCooldown = 1;
+      starter.fightsSinceRest = HARD_MODE_RULES.fightsBeforeRest;
+      await evolvePokemon(starter.id);
+      startBattle('charmander', false);
+      return Game.battle?.enemy.currentHp;
+    });
+
+    expect(initialEnemyHp).toBeGreaterThan(0);
+    await page.locator('#btn-attack').click();
+    await expect.poll(() => page.evaluate(() => Game.battle?.enemy.currentHp))
+      .toBeLessThan(initialEnemyHp);
+    await expect(page.locator('#ally-name')).toHaveText('Raichu');
+  });
+
   test('uses the same Pokémon image URL in My Team and combat', async ({ page }) => {
     await page.goto('/');
     await waitForGameReady(page);
