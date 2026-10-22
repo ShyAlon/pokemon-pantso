@@ -14,6 +14,7 @@ async function saveGame() {
     caughtSpecies: Game.caughtSpecies,
     activePokemonId: Game.activePokemonId,
     leagueUnlocked: Game.leagueUnlocked,
+    hardMode: Game.hardMode,
   });
   for (const p of Game.collection) {
     await dbPut(Game.db, 'collection', p);
@@ -41,6 +42,7 @@ async function loadGame() {
     Game.caughtSpecies = state.caughtSpecies || ['pikachu'];
     Game.activePokemonId = state.activePokemonId || null;
     Game.leagueUnlocked = state.leagueUnlocked || false;
+    Game.hardMode = state.hardMode || false;
   }
 
   if (leagueState) {
@@ -81,6 +83,8 @@ async function loadGame() {
       baseSpeciesId: 'pikachu',
       name: 'Pikachu',
       currentHp: 100,
+      hardCooldown: 0,
+      fightsSinceRest: 0,
     };
     Game.collection = [starter];
     Game.activePokemonId = starter.id;

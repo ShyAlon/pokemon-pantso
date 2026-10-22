@@ -38,11 +38,12 @@ function createLeagueOpponent() {
 
 function startLeagueBattle() {
   if (Game.busy) return;
+  if (!prepareHardModeActivePokemon()) return;
   console.log('[Bantso:league] Starting league battle');
   const enemy = createLeagueOpponent();
   if (!enemy) return;
 
-  Game.leagueBattle = { enemy: enemy, turn: 'player' };
+  Game.leagueBattle = { enemy: enemy, turn: 'player', participants: [Game.activePokemonId] };
   Game.busy = false;
 
   showScreen('battle');
@@ -150,9 +151,10 @@ function leagueEnemyTurn() {
   $('#battle-msg').textContent = `${Game.leagueBattle.enemy.name} strikes! -${damage} HP`;
 
   if (activePkmn.currentHp <= 0) {
-    const alive = Game.collection.filter(p => p.id !== activePkmn.id && p.currentHp > 0);
+    const alive = Game.getBattleReadyPokemon(activePkmn.id);
     if (alive.length > 0) {
       Game.activePokemonId = alive[0].id;
+      addBattleParticipant(Game.leagueBattle, alive[0].id);
       $('#battle-msg').textContent = activePkmn.name + ' fainted! Switch!';
       setTimeout(() => {
         renderLeagueBattle();
@@ -176,11 +178,13 @@ function leagueEnemyTurn() {
 
 function leagueSwap(pokemonId) {
   if (!Game.leagueBattle) return;
+  const consumesTurn = Game.teamContext === 'battle' && Game.leagueBattle.turn === 'player';
   console.log('[Bantso:league] Swap to', pokemonId);
   Game.activePokemonId = pokemonId;
+  addBattleParticipant(Game.leagueBattle, pokemonId);
   closeTeamOverlay();
 
-  if (Game.teamContext === 'battle' && Game.leagueBattle.turn === 'player') {
+  if (consumesTurn) {
     Game.busy = true;
     Game.leagueBattle.turn = 'animating';
     updateLeagueBattleActions();
@@ -200,6 +204,7 @@ function leagueSwap(pokemonId) {
 function endLeagueBattle(result) {
   console.log('[Bantso:league] endLeagueBattle result:', result);
   Game.busy = true;
+  completeHardModeFight(Game.leagueBattle);
   if (result === 'win') {
     Game.leagueWins++;
     console.log('[Bantso:league] League win! Total wins:', Game.leagueWins);

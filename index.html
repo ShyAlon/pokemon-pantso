@@ -28,6 +28,7 @@
     <div id="menu-dropdown">
       <button class="menu-item" id="menu-restart">🔄 Restart</button>
       <button class="menu-item danger" id="menu-newgame">🗑️ New Game</button>
+      <button class="menu-item hard-mode" id="menu-hardmode">🔥 Hard Mode</button>
       <div class="menu-divider"></div>
       <button class="menu-item" id="menu-close">✕ Close</button>
     </div>
@@ -56,7 +57,7 @@
         <div class="battle-ground"></div>
         <div class="battler ally" id="battler-ally">
           <div class="pokemon-sprite" id="ally-sprite">
-            <img class="poke-img" id="ally-img" src="" alt="" style="display:none" onerror="this.style.display='none';document.getElementById('ally-emoji').classList.add('show')" onload="this.style.display='block';document.getElementById('ally-emoji').classList.remove('show')">
+            <img class="pokemon-rendered-image poke-img" id="ally-img" alt="">
             <span class="emoji-fallback show" id="ally-emoji"></span>
           </div>
           <button class="info-icon" id="ally-info" title="Trainer guide" aria-label="Open trainer guide"><img src="trainer.svg" alt=""></button>
@@ -70,7 +71,7 @@
         </div>
         <div class="battler enemy" id="battler-enemy">
           <div class="pokemon-sprite" id="enemy-sprite">
-            <img class="poke-img" id="enemy-img" src="" alt="" style="display:none" onerror="this.style.display='none';document.getElementById('enemy-emoji').classList.add('show')" onload="this.style.display='block';document.getElementById('enemy-emoji').classList.remove('show')">
+            <img class="pokemon-rendered-image poke-img" id="enemy-img" alt="">
             <span class="emoji-fallback show" id="enemy-emoji"></span>
           </div>
           <button class="info-icon" id="enemy-info" title="Trainer guide" aria-label="Open trainer guide"><img src="trainer.svg" alt=""></button>
@@ -127,7 +128,7 @@
         <div class="arena-wins" id="arena-wins">Wins: 0</div>
         <div class="battler ally" style="margin:10px 0">
           <div class="pokemon-sprite" id="arena-sprite" style="width:90px;height:90px;min-width:90px">
-            <img class="poke-img" id="arena-img" src="" alt="" style="display:none" onerror="this.style.display='none';document.getElementById('arena-emoji').classList.add('show')" onload="this.style.display='block';document.getElementById('arena-emoji').classList.remove('show')">
+            <img class="pokemon-rendered-image poke-img" id="arena-img" alt="">
             <span class="emoji-fallback show" id="arena-emoji" style="font-size:45px"></span>
           </div>
           <div class="pokemon-name" id="arena-pkmn-name"></div>
@@ -162,6 +163,7 @@
       <h2>My Team</h2>
       <button class="team-close" id="team-close">✕</button>
     </div>
+    <div id="team-mode-message"></div>
     <div class="team-grid" id="team-grid"></div>
   </div>
 

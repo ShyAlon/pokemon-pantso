@@ -6,7 +6,7 @@
 
 function getLoreMatchups(speciesId) {
   const species = getSpecies(speciesId);
-  const matchups = SPECIES
+  const matchups = WILD_SPECIES
     .filter(candidate => candidate.id !== species.id)
     .map(candidate => ({
       species: candidate,

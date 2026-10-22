@@ -132,6 +132,7 @@ body {
 }
 .menu-item:active { background: rgba(255,255,255,0.15); }
 .menu-item.danger { color: #ff6666; }
+.menu-item.hard-mode { color: #ffad42; }
 .menu-divider {
   height: 1px; background: rgba(255,255,255,0.1);
   margin: 4px 0;
@@ -346,7 +347,7 @@ body {
   background-position: center;
   background-repeat: no-repeat;
 }
-.pokemon-sprite img.poke-img {
+.pokemon-rendered-image {
   width: 80%; height: 80%;
   object-fit: contain;
   image-rendering: auto;
@@ -666,6 +667,18 @@ body {
   gap: 12px;
   padding: 12px 16px 24px;
 }
+#team-mode-message {
+  display: none;
+  margin: 0 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255,173,66,0.18);
+  color: #ffd08a;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+#team-mode-message.show { display: block; }
 .team-card {
   background: rgba(255,255,255,0.1);
   border-radius: 14px;
@@ -707,10 +720,8 @@ body {
   background-position: center;
   background-repeat: no-repeat;
 }
-.team-card .mini-sprite img.mini-img {
-  width: 70%; height: 70%;
-  object-fit: contain;
-}
+.team-card .mini-sprite .emoji-fallback { display: none; }
+.team-card .mini-sprite .emoji-fallback.show { display: block; }
 .team-card .mini-name {
   font-size: 14px; font-weight: 700;
   text-align: center;
@@ -740,6 +751,18 @@ body {
   cursor: pointer;
 }
 .team-card .evolve-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #44227c; }
+.team-card .release-btn {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 2px solid #ff8c8c;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #d84b4b, #982d2d);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.team-card .hard-status { font-size: 11px; color: #ffcf70; font-weight: 800; }
 .team-empty {
   text-align: center; padding: 40px;
   font-size: 18px; color: #999;

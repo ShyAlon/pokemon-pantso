@@ -5,10 +5,54 @@
 // ============================================================
 
 function getWildPokemonSpecies() {
-  const uncaught = SPECIES.filter(s => !Game.caughtSpecies.includes(s.id));
-  const pool = uncaught.length > 0 ? uncaught : SPECIES;
-  console.log('[Bantso:battle] getWildPokemonSpecies | uncaught available:', uncaught.length);
+  const uncaughtRegular = SPECIES.filter(s => !Game.caughtSpecies.includes(s.id));
+  const uncaughtLegendary = LEGENDARY_SPECIES.filter(s => !Game.caughtSpecies.includes(s.id));
+  const legendaryEncounter = uncaughtLegendary.length > 0 && Math.random() < 0.05;
+  const pool = legendaryEncounter
+    ? uncaughtLegendary
+    : (uncaughtRegular.length > 0 ? uncaughtRegular : SPECIES);
+  console.log('[Bantso:battle] getWildPokemonSpecies | regular:', uncaughtRegular.length,
+    '| legendary:', uncaughtLegendary.length, '| rare encounter:', legendaryEncounter);
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function prepareHardModeActivePokemon() {
+  if (!Game.hardMode) return true;
+  const active = Game.getActivePokemon();
+  if (active && Game.canPokemonFight(active)) return true;
+  const replacement = Game.getBattleReadyPokemon()[0];
+  if (!replacement) {
+    console.log('[Bantso:hard] No Pokémon is ready to fight');
+    Game.busy = false;
+    return false;
+  }
+  Game.activePokemonId = replacement.id;
+  return true;
+}
+
+function addBattleParticipant(battle, pokemonId) {
+  if (!battle || !pokemonId) return;
+  battle.participants = battle.participants || [];
+  if (!battle.participants.includes(pokemonId)) battle.participants.push(pokemonId);
+}
+
+function completeHardModeFight(battle) {
+  if (!Game.hardMode || !battle) return;
+  const participants = battle.participants || [];
+  for (const pokemon of Game.collection) {
+    if (pokemon.skipCooldownTick) {
+      delete pokemon.skipCooldownTick;
+    } else if ((pokemon.hardCooldown || 0) > 0) {
+      pokemon.hardCooldown--;
+    }
+    pokemon.fightsSinceRest = participants.includes(pokemon.id)
+      ? (pokemon.fightsSinceRest || 0) + 1
+      : 0;
+  }
+}
+
+function canAddPokemonToHardModeTeam() {
+  return !Game.hardMode || Game.collection.length < HARD_MODE_RULES.maxTeamSize;
 }
 
 function createEnemyPokemon(species) {
@@ -29,12 +73,13 @@ function createEnemyPokemon(species) {
 }
 
 function startBattle(forcedSpeciesId, ambush) {
+  if (!prepareHardModeActivePokemon()) return;
   const species = forcedSpeciesId ? getSpecies(forcedSpeciesId) : getWildPokemonSpecies();
   const enemy = createEnemyPokemon(species);
   if (!enemy) return;
 
   console.log('[Bantso:battle] Starting battle with', enemy.name, ambush ? '(AMBUSH!)' : '');
-  Game.battle = { enemy: enemy, turn: ambush ? 'enemy' : 'player', attacksReceived: 0 };
+  Game.battle = { enemy: enemy, turn: ambush ? 'enemy' : 'player', attacksReceived: 0, participants: [Game.activePokemonId] };
   Game.busy = false;
 
   showScreen('battle');
@@ -136,8 +181,9 @@ function renderMatchup(elId, atkTypes, defTypes) {
 function updateBattleActions() {
   const disabled = Game.busy || Game.battle?.turn !== 'player';
   $('#btn-attack').disabled = disabled;
-  $('#btn-catch').disabled = disabled;
-  $('#btn-food').disabled = disabled;
+  const teamFull = !canAddPokemonToHardModeTeam();
+  $('#btn-catch').disabled = disabled || teamFull;
+  $('#btn-food').disabled = disabled || teamFull;
   $('#btn-swap').disabled = disabled;
   $('#btn-flee').disabled = disabled;
 }
@@ -214,6 +260,10 @@ function playerAttack() {
 
 function playerCatch() {
   if (Game.busy || !Game.battle || Game.battle.turn !== 'player') return;
+  if (!canAddPokemonToHardModeTeam()) {
+    $('#battle-msg').textContent = 'Hard Mode team is full!';
+    return;
+  }
   Game.busy = true;
   Game.battle.turn = 'animating';
   updateBattleActions();
@@ -267,6 +317,10 @@ function getFoodSuccessChance(allyTypes, enemyTypes, attacksReceived) {
 
 function playerOfferFood() {
   if (Game.busy || !Game.battle || Game.battle.turn !== 'player') return;
+  if (!canAddPokemonToHardModeTeam()) {
+    $('#battle-msg').textContent = 'Hard Mode team is full!';
+    return;
+  }
   Game.busy = true;
   Game.battle.turn = 'animating';
   updateBattleActions();
@@ -308,6 +362,7 @@ function playerOfferFood() {
 }
 
 function addPokemonToCollection(enemy) {
+  if (!canAddPokemonToHardModeTeam()) return false;
   const species = getSpecies(enemy.speciesId);
   const isNew = !Game.caughtSpecies.includes(enemy.speciesId);
   if (isNew) {
@@ -322,9 +377,13 @@ function addPokemonToCollection(enemy) {
     baseSpeciesId: enemy.speciesId,
     name: enemy.name,
     currentHp: species.baseHp + (Game.playerLevel - 1) * 15,
+    hardCooldown: Game.hardMode ? HARD_MODE_RULES.adjustmentFights : 0,
+    fightsSinceRest: 0,
+    skipCooldownTick: Game.hardMode,
   };
   Game.collection.push(newPkmn);
   console.log('[Bantso:battle] Added to collection:', newPkmn.id, '| collection size:', Game.collection.length);
+  return true;
 }
 
 function enemyTurn() {
@@ -342,9 +401,10 @@ function enemyTurn() {
   $('#battle-msg').textContent = `Wild ${Game.battle.enemy.name} hits! -${damage} HP`;
 
   if (activePkmn.currentHp <= 0) {
-    const alive = Game.collection.filter(p => p.id !== activePkmn.id && p.currentHp > 0);
+    const alive = Game.getBattleReadyPokemon(activePkmn.id);
     if (alive.length > 0) {
       Game.activePokemonId = alive[0].id;
+      addBattleParticipant(Game.battle, alive[0].id);
       console.log('[Bantso:battle] Pokémon fainted! Auto-switch to', alive[0].id);
       $('#battle-msg').textContent = activePkmn.name + ' fainted! Switch!';
       setTimeout(() => {
@@ -370,11 +430,13 @@ function enemyTurn() {
 
 function playerSwap(pokemonId) {
   if (!Game.battle) return;
+  const consumesTurn = Game.teamContext === 'battle' && Game.battle.turn === 'player';
   console.log('[Bantso:battle] Player swaps to', pokemonId);
   Game.activePokemonId = pokemonId;
+  addBattleParticipant(Game.battle, pokemonId);
   closeTeamOverlay();
 
-  if (Game.teamContext === 'battle' && Game.battle.turn === 'player') {
+  if (consumesTurn) {
     Game.busy = true;
     Game.battle.turn = 'animating';
     updateBattleActions();
@@ -420,6 +482,7 @@ function playerFlee() {
       lostName = getSpecies(victim.speciesId).name;
       console.warn('[Bantso:battle] Flee failed — lost', lostName);
       Game.collection = Game.collection.filter(p => p.id !== victim.id);
+      if (Game.db) dbDelete(Game.db, 'collection', victim.id);
       Game.caughtSpecies = [...new Set(Game.collection.map(p => p.baseSpeciesId || p.speciesId))];
       Game.caughtCount = Game.collection.length;
       if (Game.activePokemonId === victim.id && Game.collection.length > 0) {
@@ -447,6 +510,7 @@ function playerFlee() {
 function endBattle(result) {
   console.log('[Bantso:battle] endBattle result:', result);
   Game.busy = true;
+  completeHardModeFight(Game.battle);
   if (result === 'win' || result === 'caught' || result === 'befriended') {
     Game.audio.play('victory');
     showCheckmark(1500);

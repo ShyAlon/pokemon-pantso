@@ -70,6 +70,21 @@ const SPECIES = [
   { id:'eevee',      name:'Eevee',      types:['Normal'],               dex:133, color:'#C4A46C', emoji:'🦊', baseHp:100, baseDmg:25, lore:'Its DNA is special. Can evolve into many different forms!' },
 ];
 
+// Legendary and mythical Pokémon appear rarely in wild encounters.
+const LEGENDARY_SPECIES = [
+  { id:'articuno',  name:'Articuno',  types:['Ice','Flying'],      dex:144, color:'#82C9EE', emoji:'❄️', baseHp:145, baseDmg:36, legendary:true, lore:'A legendary bird whose icy wings can make snow fall.' },
+  { id:'zapdos',    name:'Zapdos',    types:['Electric','Flying'], dex:145, color:'#E7C52C', emoji:'⚡', baseHp:140, baseDmg:38, legendary:true, lore:'A legendary bird that gains power from thunderstorms.' },
+  { id:'moltres',   name:'Moltres',   types:['Fire','Flying'],     dex:146, color:'#E66B32', emoji:'🔥', baseHp:145, baseDmg:37, legendary:true, lore:'A legendary bird whose fiery wings light up the sky.' },
+  { id:'mewtwo',    name:'Mewtwo',    types:['Psychic'],           dex:150, color:'#A88BC7', emoji:'🔮', baseHp:155, baseDmg:42, legendary:true, lore:'A tremendously powerful Pokémon created through science.' },
+  { id:'mew',       name:'Mew',       types:['Psychic'],           dex:151, color:'#E8A8C8', emoji:'✨', baseHp:145, baseDmg:39, legendary:true, lore:'A playful mythical Pokémon said to contain every Pokémon gene.' },
+  { id:'lugia',     name:'Lugia',     types:['Psychic','Flying'],  dex:249, color:'#D8E1ED', emoji:'🌊', baseHp:165, baseDmg:39, legendary:true, lore:'The guardian of the seas sleeps quietly in deep ocean trenches.' },
+  { id:'ho-oh',     name:'Ho-Oh',     types:['Fire','Flying'],     dex:250, color:'#D95A37', emoji:'🌈', baseHp:160, baseDmg:40, legendary:true, lore:'Its rainbow wings are said to bring happiness.' },
+  { id:'rayquaza',  name:'Rayquaza',  types:['Dragon','Flying'],   dex:384, color:'#3E9A78', emoji:'🐉', baseHp:160, baseDmg:43, legendary:true, lore:'It soars high above the clouds and watches over the world.' },
+  { id:'type-null', name:'Type: Null', types:['Normal'],            dex:772, color:'#8C8A7E', emoji:'🛡️', baseHp:135, baseDmg:34, legendary:true, lore:'A rare Pokémon wearing a heavy control mask.' },
+  { id:'meltan',    name:'Meltan',    types:['Steel'],             dex:808, color:'#AEB8C2', emoji:'🔩', baseHp:125, baseDmg:33, legendary:true, lore:'A tiny mythical Pokémon that absorbs metal into its body.' },
+  { id:'kubfu',     name:'Kubfu',     types:['Fighting'],          dex:891, color:'#D8D2C8', emoji:'🥋', baseHp:130, baseDmg:35, legendary:true, lore:'It trains hard to strengthen its body and spirit.' },
+];
+
 // Evolved forms are available to the player's collection but not the wild pool.
 const EVOLVED_SPECIES = [
   { id:'raichu',     name:'Raichu',     types:['Electric'],          dex:26,  color:'#E6A23C', emoji:'⚡', baseHp:110, baseDmg:30, lore:'Its long tail grounds its powerful electricity.' },
@@ -99,6 +114,9 @@ const EVOLVED_SPECIES = [
   { id:'golem',      name:'Golem',      types:['Rock','Ground'],     dex:76,  color:'#756755', emoji:'🪨', baseHp:145, baseDmg:31, lore:'Its heavy shell is tough enough to withstand explosions.' },
   { id:'magnezone',  name:'Magnezone',  types:['Electric','Steel'], dex:462, color:'#8294A6', emoji:'🧲', baseHp:130, baseDmg:35, lore:'A powerful magnetic field lets it hover through the air.' },
   { id:'gengar',     name:'Gengar',     types:['Ghost','Poison'],    dex:94,  color:'#51406F', emoji:'👻', baseHp:115, baseDmg:36, lore:'It hides in shadows with a wide and mischievous grin.' },
+  { id:'silvally',   name:'Silvally',   types:['Normal'],            dex:773, color:'#C5C8C3', emoji:'🛡️', baseHp:155, baseDmg:40, legendary:true, lore:'Trust broke its control mask and awakened its true power.' },
+  { id:'melmetal',   name:'Melmetal',   types:['Steel'],             dex:809, color:'#9EA8AE', emoji:'⚙️', baseHp:165, baseDmg:42, legendary:true, lore:'Its liquid-metal body can deliver extraordinarily heavy punches.' },
+  { id:'urshifu',    name:'Urshifu',    types:['Fighting','Dark'],  dex:892, color:'#4F5660', emoji:'🥋', baseHp:155, baseDmg:43, legendary:true, lore:'Years of training turned its movements into powerful martial arts.' },
 ];
 
 const EVOLUTION_MAP = {
@@ -108,11 +126,13 @@ const EVOLUTION_MAP = {
   magnemite:'magneton', doduo:'dodrio', seel:'dewgong', grimer:'muk', gastly:'haunter', onix:'steelix',
   charmeleon:'charizard', ivysaur:'venusaur', wartortle:'blastoise', kadabra:'alakazam',
   machoke:'machamp', graveler:'golem', magneton:'magnezone', haunter:'gengar',
+  'type-null':'silvally', meltan:'melmetal', kubfu:'urshifu',
 };
 
-const ALL_SPECIES = [...SPECIES, ...EVOLVED_SPECIES];
+const WILD_SPECIES = [...SPECIES, ...LEGENDARY_SPECIES];
+const ALL_SPECIES = [...WILD_SPECIES, ...EVOLVED_SPECIES];
 
-console.log('[Bantso:species] Loaded', SPECIES.length, 'species');
+console.log('[Bantso:species] Loaded', SPECIES.length, 'regular and', LEGENDARY_SPECIES.length, 'legendary species');
 
 function getSpecies(id) {
   const s = ALL_SPECIES.find(s => s.id === id);

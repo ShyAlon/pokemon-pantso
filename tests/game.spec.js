@@ -219,6 +219,142 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await expect.poll(() => page.evaluate(() => Game.collection[0].speciesId)).toBe('raichu');
   });
 
+  test('uses the same Pokémon image URL in My Team and combat', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+
+    await page.locator('#team-access-btn').click();
+    const teamImage = page.locator('.team-card.active-pokemon .pokemon-rendered-image');
+    await expect(teamImage).toHaveAttribute('src', /25\.png$/);
+    const teamImageUrl = await teamImage.evaluate(image => image.src);
+
+    await page.locator('#team-close').click();
+    await page.evaluate(() => startBattle('charmander', false));
+    const combatImage = page.locator('#ally-img');
+    await expect(combatImage).toHaveAttribute('src', /25\.png$/);
+    const combatImageUrl = await combatImage.evaluate(image => image.src);
+
+    expect(combatImageUrl).toBe(teamImageUrl);
+  });
+
+  test('swapping Pokémon consumes the player turn', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+
+    await page.evaluate(() => {
+      addPokemonToCollection({ speciesId: 'bulbasaur', name: 'Bulbasaur' });
+      startBattle('charmander', false);
+      openTeamOverlay('battle');
+    });
+    await page.locator('.team-card').filter({ hasText: 'Bulbasaur' }).click();
+
+    await expect.poll(() => page.evaluate(() => Game.battle.turn)).toBe('animating');
+    await expect(page.locator('#battle-msg')).toContainText('Go, Bulbasaur!');
+  });
+
+  test('includes rare legendary encounters and their evolutions', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+
+    const legendary = await page.evaluate(() => {
+      const originalRandom = Math.random;
+      Math.random = () => 0;
+      const encounter = getWildPokemonSpecies();
+      Math.random = originalRandom;
+      return {
+        count: LEGENDARY_SPECIES.length,
+        encounter: encounter.id,
+        meltanEvolution: getEvolution('meltan').id,
+        nullEvolution: getEvolution('type-null').id,
+        kubfuEvolution: getEvolution('kubfu').id,
+      };
+    });
+
+    expect(legendary.count).toBe(11);
+    expect(legendary.encounter).toBe('articuno');
+    expect(legendary.meltanEvolution).toBe('melmetal');
+    expect(legendary.nullEvolution).toBe('silvally');
+    expect(legendary.kubfuEvolution).toBe('urshifu');
+  });
+
+  test('enforces Hard Mode roster, cooldown, rest, and evolution cost', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+
+    const result = await page.evaluate(async () => {
+      await doNewGame(true);
+      const starter = Game.collection[0];
+      const ids = ['charmander', 'bulbasaur', 'squirtle', 'meowth', 'psyduck', 'abra'];
+      for (const id of ids) {
+        const species = getSpecies(id);
+        addPokemonToCollection({ speciesId: id, name: species.name });
+      }
+      const eighth = addPokemonToCollection({ speciesId: 'machop', name: 'Machop' });
+
+      const newcomer = Game.collection.find(pokemon => pokemon.speciesId === 'charmander');
+      completeHardModeFight({ participants: [starter.id] });
+      const cooldownAfterCatchFight = newcomer.hardCooldown;
+      completeHardModeFight({ participants: [starter.id] });
+      const cooldownAfterOne = newcomer.hardCooldown;
+      completeHardModeFight({ participants: [starter.id] });
+      const cooldownAfterTwo = newcomer.hardCooldown;
+      const starterMustRest = !Game.canPokemonFight(starter);
+      completeHardModeFight({ participants: [newcomer.id] });
+
+      return {
+        hardMode: Game.hardMode,
+        rosterSize: Game.collection.length,
+        eighth,
+        cooldownAfterCatchFight,
+        cooldownAfterOne,
+        cooldownAfterTwo,
+        starterMustRest,
+        starterReadyAfterRest: Game.canPokemonFight(starter),
+      };
+    });
+
+    expect(result).toEqual({
+      hardMode: true,
+      rosterSize: 7,
+      eighth: false,
+      cooldownAfterCatchFight: 2,
+      cooldownAfterOne: 1,
+      cooldownAfterTwo: 0,
+      starterMustRest: true,
+      starterReadyAfterRest: true,
+    });
+
+    await page.evaluate(() => {
+      Game.collection[0].fightsSinceRest = 2;
+      openTeamOverlay('battle');
+    });
+    await expect(page.locator('.team-card').filter({ hasText: 'Pikachu' }))
+      .toContainText('Fatigued after two fights — must rest for one fight.');
+    await expect(page.locator('.team-card').filter({ hasText: 'Charmander' }))
+      .not.toContainText('Still adjusting');
+    await page.evaluate(() => {
+      const newcomer = Game.collection.find(pokemon => pokemon.speciesId === 'charmander');
+      newcomer.hardCooldown = 2;
+      renderTeamGrid();
+    });
+    await expect(page.locator('.team-card').filter({ hasText: 'Charmander' }))
+      .toContainText('Still adjusting to the team — ready after 2 more fights.');
+    await page.locator('.team-card').filter({ hasText: 'Charmander' }).click();
+    await expect(page.locator('#team-mode-message'))
+      .toContainText('Charmander cannot fight yet. Still adjusting to the team');
+
+    await page.evaluate(() => {
+      Game.collection = Game.collection.slice(0, 2);
+      Game.caughtSpecies = Game.collection.map(pokemon => pokemon.baseSpeciesId || pokemon.speciesId);
+      openTeamOverlay('forest');
+    });
+    await page.locator('.team-card').filter({ hasText: 'Pikachu' }).locator('.evolve-btn').click();
+    await expect(page.locator('.release-btn')).toHaveCount(1);
+    await page.locator('.release-btn').click();
+    await expect(page.locator('.team-card')).toHaveCount(1);
+    await expect(page.locator('.team-card')).toContainText('Raichu');
+  });
+
   // ── 7. Menu Dropdown ──
   test('opens menu and shows restart/new game options', async ({ page }) => {
     await page.goto('/');
@@ -557,8 +693,6 @@ test.describe('Pokémon Bantso — End-to-End', () => {
       await page.mouse.click(cx + (i % 2 === 0 ? 80 : -80), cy + (i < 2 ? -20 : 30));
       await page.waitForTimeout(400);
     }
-    await page.evaluate(() => { Math.random = window.__testRandom; });
-
     // Open and close menu
     await page.locator('#menu-btn').click();
     await page.waitForTimeout(200);
@@ -568,6 +702,7 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await page.locator('#team-access-btn').click();
     await page.waitForTimeout(300);
     await page.locator('#team-close').click();
+    await page.evaluate(() => { Math.random = window.__testRandom; });
 
     // No console errors from these interactions
     const realErrors = errors.filter(e =>

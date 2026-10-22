@@ -52,6 +52,8 @@ async function doRestart() {
     starter.baseSpeciesId = 'pikachu';
     starter.name = 'Pikachu';
     starter.currentHp = getSpecies('pikachu').baseHp;
+    starter.hardCooldown = 0;
+    starter.fightsSinceRest = 0;
     Game.activePokemonId = starter.id;
   } else {
     const newStarter = {
@@ -60,11 +62,14 @@ async function doRestart() {
       baseSpeciesId: 'pikachu',
       name: 'Pikachu',
       currentHp: getSpecies('pikachu').baseHp,
+      hardCooldown: 0,
+      fightsSinceRest: 0,
     };
     Game.collection = [newStarter];
     Game.activePokemonId = newStarter.id;
   }
 
+  if (Game.db) await dbClear(Game.db, 'collection');
   await saveGame();
   healAllPokemon();
   await saveGame();
@@ -75,7 +80,7 @@ async function doRestart() {
   console.log('[Bantso:menu] Restart complete');
 }
 
-async function doNewGame() {
+async function doNewGame(hardMode = false) {
   closeMenu();
   Game.audio.play('click');
   console.log('[Bantso:menu] === NEW GAME (full wipe) ===');
@@ -90,12 +95,16 @@ async function doNewGame() {
   Game.leagueBattle = null;
   Game.busy = false;
   Game.scrollOffset = 0;
+  Game.hardMode = hardMode;
+  Game.pendingEvolutionId = null;
   Game.collection = [{
     id: 'pikachu_01',
     speciesId: 'pikachu',
     baseSpeciesId: 'pikachu',
     name: 'Pikachu',
     currentHp: getSpecies('pikachu').baseHp,
+    hardCooldown: 0,
+    fightsSinceRest: 0,
   }];
   Game.activePokemonId = 'pikachu_01';
 

@@ -112,9 +112,7 @@ function stepDust() {
 // ============================================================
 //  Sprite rendering helpers
 // ============================================================
-function setSpriteImage(imgId, emojiId, speciesId) {
-  const imgEl = $(`#${imgId}`);
-  const emojiEl = $(`#${emojiId}`);
+function applyPokemonSprite(imgEl, emojiEl, speciesId) {
   const species = getSpecies(speciesId);
   const url = getSpriteUrl(speciesId);
 
@@ -123,7 +121,21 @@ function setSpriteImage(imgId, emojiId, speciesId) {
     emojiEl.classList.add('show');
   }
   if (imgEl) {
+    imgEl.alt = species.name;
     imgEl.style.display = 'none';
+    imgEl.onload = () => {
+      imgEl.style.display = 'block';
+      if (emojiEl) emojiEl.classList.remove('show');
+    };
+    imgEl.onerror = () => {
+      imgEl.style.display = 'none';
+      if (emojiEl) emojiEl.classList.add('show');
+    };
     imgEl.src = url;
   }
+  return url;
+}
+
+function setSpriteImage(imgId, emojiId, speciesId) {
+  return applyPokemonSprite($(`#${imgId}`), $(`#${emojiId}`), speciesId);
 }
