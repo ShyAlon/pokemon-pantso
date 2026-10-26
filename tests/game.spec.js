@@ -85,14 +85,14 @@ test.describe('Pokémon Bantso — End-to-End', () => {
   });
 
   // ── 3. Species Loaded ──
-  test('loads all 20 Pokémon species', async ({ page }) => {
+  test('loads all 23 regular Pokémon species', async ({ page }) => {
     const logs = [];
     page.on('console', msg => { if (msg.type() === 'log') logs.push(msg.text()); });
     await page.goto('/');
     await waitForGameReady(page);
 
     const speciesLog = logs.find(l => l.includes('[Bantso:species] Loaded'));
-    expect(speciesLog).toContain('20');
+    expect(speciesLog).toContain('23 regular and 13 legendary species');
   });
 
   // ── 4. Forest Grid Click ──
@@ -291,7 +291,7 @@ test.describe('Pokémon Bantso — End-to-End', () => {
       };
     });
 
-    expect(legendary.count).toBe(11);
+    expect(legendary.count).toBe(13);
     expect(legendary.encounter).toBe('articuno');
     expect(legendary.meltanEvolution).toBe('melmetal');
     expect(legendary.nullEvolution).toBe('silvally');

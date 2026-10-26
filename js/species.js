@@ -68,6 +68,9 @@ const SPECIES = [
   { id:'gastly',     name:'Gastly',     types:['Ghost','Poison'],       dex:92,  color:'#4B0082', emoji:'👻', baseHp:85,  baseDmg:27, lore:'Made of gas! It can slip through any wall. Loves to surprise people.' },
   { id:'onix',       name:'Onix',       types:['Rock','Ground'],        dex:95,  color:'#696969', emoji:'🐍', baseHp:115, baseDmg:21, lore:'A giant rock snake. Digs tunnels underground at 50 miles per hour!' },
   { id:'eevee',      name:'Eevee',      types:['Normal'],               dex:133, color:'#C4A46C', emoji:'🦊', baseHp:100, baseDmg:25, lore:'Its DNA is special. Can evolve into many different forms!' },
+  { id:'azurill',    name:'Azurill',    types:['Normal','Fairy'],       dex:298, color:'#69B9E8', emoji:'🫧', baseHp:90,  baseDmg:20, lore:'Bounces on its big, rubbery tail and uses it as a float in water.' },
+  { id:'carbink',    name:'Carbink',    types:['Rock','Fairy'],         dex:703, color:'#92BFD6', emoji:'💎', baseHp:120, baseDmg:22, lore:'Born deep underground, it sparkles with jewels embedded in its body.' },
+  { id:'forretress', name:'Forretress', types:['Bug','Steel'],          dex:205, color:'#A894B8', emoji:'🛡️', baseHp:125, baseDmg:24, lore:'Its sturdy steel shell protects its body. It clings to trees and surprises foes.' },
 ];
 
 // Legendary and mythical Pokémon appear rarely in wild encounters.
@@ -80,9 +83,11 @@ const LEGENDARY_SPECIES = [
   { id:'lugia',     name:'Lugia',     types:['Psychic','Flying'],  dex:249, color:'#D8E1ED', emoji:'🌊', baseHp:165, baseDmg:39, legendary:true, lore:'The guardian of the seas sleeps quietly in deep ocean trenches.' },
   { id:'ho-oh',     name:'Ho-Oh',     types:['Fire','Flying'],     dex:250, color:'#D95A37', emoji:'🌈', baseHp:160, baseDmg:40, legendary:true, lore:'Its rainbow wings are said to bring happiness.' },
   { id:'rayquaza',  name:'Rayquaza',  types:['Dragon','Flying'],   dex:384, color:'#3E9A78', emoji:'🐉', baseHp:160, baseDmg:43, legendary:true, lore:'It soars high above the clouds and watches over the world.' },
+  { id:'diancie',   name:'Diancie',   types:['Rock','Fairy'],      dex:719, color:'#E8A0C4', emoji:'💎', baseHp:145, baseDmg:38, legendary:true, lore:'A mythical Pokémon that creates sparkling diamonds by compressing the air.' },
   { id:'type-null', name:'Type: Null', types:['Normal'],            dex:772, color:'#8C8A7E', emoji:'🛡️', baseHp:135, baseDmg:34, legendary:true, lore:'A rare Pokémon wearing a heavy control mask.' },
   { id:'meltan',    name:'Meltan',    types:['Steel'],             dex:808, color:'#AEB8C2', emoji:'🔩', baseHp:125, baseDmg:33, legendary:true, lore:'A tiny mythical Pokémon that absorbs metal into its body.' },
   { id:'kubfu',     name:'Kubfu',     types:['Fighting'],          dex:891, color:'#D8D2C8', emoji:'🥋', baseHp:130, baseDmg:35, legendary:true, lore:'It trains hard to strengthen its body and spirit.' },
+  { id:'eternatus', name:'Eternatus', types:['Poison','Dragon'],    dex:890, color:'#AE395F', emoji:'☄️', baseHp:170, baseDmg:42, legendary:true, lore:'A mysterious legendary Pokémon whose core releases tremendous energy.' },
 ];
 
 // Evolved forms are available to the player's collection but not the wild pool.
