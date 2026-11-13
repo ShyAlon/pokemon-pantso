@@ -140,11 +140,11 @@ All 20 Pokémon have canonical types (1–2 each). Attacks apply the full **18-t
 | **0.5×** | Not very effective | Fire → Water |
 | **0×** | No effect | Normal → Ghost |
 
-Press **Attack** to choose one of your Pokémon's types when it has two. The picker shows 👍 for favorable attacks and 👎 for unfavorable attacks. Single-type Pokémon attack immediately. Dual-type defenders multiply both matchups against the selected attack type. The battle message shows the effectiveness label:
+Press **Attack** to choose a named move. Dual-type Pokémon get one move per type. Single-type Pokémon also get Tackle, or Rock Smash if their type is Normal. The picker shows 👍 for favorable attacks and 👎 for unfavorable attacks. Dual-type defenders multiply both matchups against the selected move's type.
 
-> *"Squirtle tackles hard! — 50 HP — Super effective!"*
+> *"Squirtle used Water Gun! — 50 HP — Super effective!"*
 
-> *"Pikachu strikes! — 6 HP — Not very effective…"*
+> *"Pikachu used Thunder Shock! — 6 HP — Not very effective…"*
 
 #### Matchup Indicators
 Before attacking, each side shows a persistent matchup label under the type badges:

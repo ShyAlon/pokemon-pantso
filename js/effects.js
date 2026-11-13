@@ -22,10 +22,28 @@ function showCrossMark(duration = 800) {
   setTimeout(() => el.classList.remove('show'), duration);
 }
 
-function showSlash(duration = 300) {
-  const el = $('#slash-effect');
-  el.classList.add('active');
-  setTimeout(() => el.classList.remove('active'), duration);
+function playPlayerMove(type, attacker, damage, effectiveness) {
+  const move = ATTACK_MOVES[type];
+  const sprite = $('#enemy-sprite');
+  const target = sprite.getBoundingClientRect();
+  const layer = $('#effects-layer');
+  const bounds = layer.getBoundingClientRect();
+  const effect = document.createElement('div');
+  effect.className = 'move-effect';
+  effect.dataset.type = type;
+  effect.setAttribute('aria-hidden', 'true');
+  effect.style.left = (target.left + target.width / 2 - bounds.left) + 'px';
+  effect.style.top = (target.top + target.height / 2 - bounds.top) + 'px';
+  effect.style.setProperty('--move-color', TYPE_COLORS[type]);
+  effect.style.setProperty('--move-animation', `move-${move.motion}`);
+  effect.textContent = move.icon;
+  layer.append(effect);
+  setTimeout(() => effect.remove(), 500);
+
+  Game.audio.playMove(move);
+  shakeSprite('#enemy-sprite');
+  const message = `${attacker} used ${move.name}! — ${damage} HP`;
+  $('#battle-msg').textContent = effectiveness ? `${message} — ${effectiveness}` : message;
 }
 
 function spawnConfetti(count = 50) {

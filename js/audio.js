@@ -91,6 +91,15 @@ class SoundEngine {
     }
   }
 
+  playMove({ tones, voice = 'triangle', noise }) {
+    if (!this.enabled || !this.ctx) return;
+    this.resume();
+    if (noise) this._noise(noise, 0.14);
+    tones.forEach((frequency, index) => {
+      this._tone(frequency, 0.14, voice, 0.09, index * 0.06);
+    });
+  }
+
   // ---- Music ----
   playMusic(type) {
     if (!this.enabled || !this.ctx) return;
@@ -160,7 +169,7 @@ class SoundEngine {
   _noise(duration, volume=0.1, startTime=0) {
     if (!this.ctx) return;
     if (!isFinite(duration) || !isFinite(volume) || !isFinite(startTime)) return;
-    const bufSize = this.ctx.sampleRate * duration;
+    const bufSize = Math.floor(this.ctx.sampleRate * duration);
     const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
     const data = buf.getChannelData(0);
     for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;

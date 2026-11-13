@@ -76,7 +76,7 @@ function renderLeagueBattle() {
   setSpriteImage('ally-img', 'ally-emoji', activePkmn.speciesId);
   $('#ally-name').textContent = allySp.name;
   $('#ally-types').innerHTML = renderTypeBadges(allySp.types);
-  renderMatchup('ally-matchup', allySp.types, enemySp.types, true);
+  renderMatchup('ally-matchup', getAttackTypes(allySp), enemySp.types, true);
   renderHealthBar('ally-hp-bar', 'ally-hp-text', activePkmn.currentHp, playerStats.maxHp);
 
   setSpriteImage('enemy-img', 'enemy-emoji', enemy.speciesId);
@@ -119,11 +119,7 @@ function leagueAttack(attackType) {
   const damage = Math.max(1, Math.round(rawDamage * eff.multiplier));
 
   Game.leagueBattle.enemy.currentHp = Math.max(0, Game.leagueBattle.enemy.currentHp - damage);
-  Game.audio.play('attack');
-  shakeSprite('#enemy-sprite');
-  showSlash(300);
-  const msg = pickAttackFlavor(allySpecies.name, damage);
-  $('#battle-msg').textContent = eff.label ? msg + ' — ' + eff.label : msg;
+  playPlayerMove(attackType, allySpecies.name, damage, eff.label);
   renderLeagueBattle();
 
   setTimeout(() => {

@@ -259,15 +259,15 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     const dialog = page.getByRole('dialog', { name: 'Choose an attack' });
     const attack = page.locator('#btn-attack');
     await attack.click();
-    await expect(dialog.getByRole('button', { name: /Grass/ })).toHaveText('Grass👍');
-    await expect(dialog.getByRole('button', { name: /Poison/ })).toHaveText('Poison👎');
+    await expect(dialog.getByRole('button', { name: /Razor Leaf/ })).toHaveText('Razor LeafGrass👍');
+    await expect(dialog.getByRole('button', { name: /Poison Sting/ })).toHaveText('Poison StingPoison👎');
     await dialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(dialog).toBeHidden();
     expect(await page.evaluate(() => Game.battle.attacksReceived)).toBe(0);
 
     await page.evaluate(() => startBattle('meowth', false));
     await attack.click();
-    await expect(dialog.getByRole('button', { name: 'Grass' })).toHaveText('Grass');
+    await expect(dialog.getByRole('button', { name: /Razor Leaf/ })).toHaveText('Razor LeafGrass');
     await dialog.press('Escape');
     await expect(dialog).toBeHidden();
 
@@ -279,6 +279,29 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     expect(damage).toBeGreaterThan(0);
     expect(damage).toBeLessThan(10);
     await expect(dialog).toBeHidden();
+  });
+
+  test('offers named moves for single-type Pokémon and plays the chosen effect', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+    await page.evaluate(() => {
+      addPokemonToCollection({ speciesId: 'charmander', name: 'Charmander' });
+      Game.activePokemonId = Game.collection.at(-1).id;
+      startBattle('bulbasaur', false);
+      const playMove = Game.audio.playMove.bind(Game.audio);
+      Game.audio.playMove = move => {
+        document.body.dataset.playedMove = move.name;
+        playMove(move);
+      };
+    });
+
+    await page.locator('#btn-attack').click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('button', { name: /Tackle/ })).toBeVisible();
+    await dialog.getByRole('button', { name: /Ember/ }).click();
+    await expect(page.locator('.move-effect[data-type="Fire"]')).toHaveCSS('animation-name', 'move-rise');
+    await expect(page.locator('body')).toHaveAttribute('data-played-move', 'Ember');
+    await expect(page.locator('#battle-msg')).toContainText('Charmander used Ember!');
   });
 
   test('uses the chosen attack type in a league battle', async ({ page }) => {
@@ -315,6 +338,7 @@ test.describe('Pokémon Bantso — End-to-End', () => {
 
     expect(initialEnemyHp).toBeGreaterThan(0);
     await page.locator('#btn-attack').click();
+    await page.getByRole('dialog').getByRole('button', { name: /Thunder Shock/ }).click();
     await expect.poll(() => page.evaluate(() => Game.battle?.enemy.currentHp))
       .toBeLessThan(initialEnemyHp);
     await expect(page.locator('#ally-name')).toHaveText('Raichu');

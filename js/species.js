@@ -46,6 +46,33 @@ const TYPE_HINT_EMOJI = {
   Steel:'✨', Fairy:'💫',
 };
 
+const ATTACK_MOVES = {
+  Normal:   { name:'Tackle',        icon:'💥', motion:'impact', tones:[150, 85], noise:0.09 },
+  Fire:     { name:'Ember',         icon:'🔥', motion:'rise',   tones:[240, 120], noise:0.36 },
+  Water:    { name:'Water Gun',     icon:'💦', motion:'spray',  tones:[640, 290], noise:0.19 },
+  Electric: { name:'Thunder Shock', icon:'⚡', motion:'strike', tones:[960, 1250, 780], voice:'square', noise:0.08 },
+  Grass:    { name:'Razor Leaf',    icon:'🍃', motion:'spray',  tones:[340, 470], noise:0.15 },
+  Ice:      { name:'Ice Shard',     icon:'❄️', motion:'strike', tones:[1440, 1060, 820] },
+  Fighting: { name:'Rock Smash',    icon:'👊', motion:'impact', tones:[195, 105], noise:0.12 },
+  Poison:   { name:'Poison Sting',  icon:'🟣', motion:'rise',   tones:[240, 310, 370] },
+  Ground:   { name:'Mud-Slap',      icon:'🟤', motion:'spray',  tones:[120, 68], noise:0.22 },
+  Flying:   { name:'Gust',          icon:'🌪️', motion:'spray',  tones:[520, 320], noise:0.28 },
+  Psychic:  { name:'Confusion',     icon:'🔮', motion:'pulse',  tones:[460, 690, 460], voice:'sine' },
+  Bug:      { name:'Bug Bite',      icon:'🐛', motion:'impact', tones:[610, 220], voice:'square' },
+  Rock:     { name:'Rock Throw',    icon:'🪨', motion:'strike', tones:[135, 90], noise:0.17 },
+  Ghost:    { name:'Shadow Ball',   icon:'👻', motion:'pulse',  tones:[310, 215, 145], voice:'sine' },
+  Dragon:   { name:'Dragon Breath', icon:'🐉', motion:'spray',  tones:[280, 180, 100], voice:'sawtooth', noise:0.2 },
+  Dark:     { name:'Dark Pulse',    icon:'🌑', motion:'pulse',  tones:[175, 130, 95], voice:'square' },
+  Steel:    { name:'Metal Claw',    icon:'✦', motion:'strike', tones:[1130, 590], noise:0.08 },
+  Fairy:    { name:'Fairy Wind',    icon:'✨', motion:'rise',   tones:[660, 880, 1320], voice:'sine' },
+};
+
+function getAttackTypes(species) {
+  if (species.types.length > 1) return species.types;
+  const coverage = species.types[0] === 'Normal' ? 'Fighting' : 'Normal';
+  return [...species.types, coverage];
+}
+
 // ---- Species definitions ----
 const SPECIES = [
   { id:'pikachu',    name:'Pikachu',    types:['Electric'],             dex:25,  color:'#FFD700', emoji:'⚡', baseHp:100, baseDmg:25, lore:'Stores electricity in its cheeks. Raises its tail to check its surroundings.' },

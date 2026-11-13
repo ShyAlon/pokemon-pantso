@@ -136,7 +136,7 @@ function renderBattle() {
   setSpriteImage('ally-img', 'ally-emoji', activePkmn.speciesId);
   $('#ally-name').textContent = allySp.name;
   $('#ally-types').innerHTML = renderTypeBadges(allySp.types);
-  renderMatchup('ally-matchup', allySp.types, enemySp.types, true);
+  renderMatchup('ally-matchup', getAttackTypes(allySp), enemySp.types, true);
   renderHealthBar('ally-hp-bar', 'ally-hp-text', activePkmn.currentHp, playerStats.maxHp);
 
   setSpriteImage('enemy-img', 'enemy-emoji', enemy.speciesId);
@@ -190,46 +190,13 @@ function updateBattleActions() {
   $('#btn-flee').disabled = disabled;
 }
 
-// Narration templates — Pokémon name + action, 20 variants
-const ATTACK_FLAVORS = [
-  (n,d) => `${n} strikes! — ${d} HP`,
-  (n,d) => `Go, ${n}! — ${d} HP`,
-  (n,d) => `${n} slashes through! — ${d} HP`,
-  (n,d) => `${n} lands a hit! — ${d} HP`,
-  (n,d) => `Nice one, ${n}! — ${d} HP`,
-  (n,d) => `${n} tackles hard! — ${d} HP`,
-  (n,d) => `${n} is unstoppable! — ${d} HP`,
-  (n,d) => `Whoa! ${n} smashes! — ${d} HP`,
-  (n,d) => `${n} with a quick attack! — ${d} HP`,
-  (n,d) => `Bam! ${n} hits! — ${d} HP`,
-  (n,d) => `${n} swipes fiercely! — ${d} HP`,
-  (n,d) => `${n} doesn't hold back! — ${d} HP`,
-  (n,d) => `A powerful blow from ${n}! — ${d} HP`,
-  (n,d) => `${n} charges forward! — ${d} HP`,
-  (n,d) => `${n} leaps into action! — ${d} HP`,
-  (n,d) => `${n} lands a critical hit! — ${d} HP`,
-  (n,d) => `Right on target, ${n}! — ${d} HP`,
-  (n,d) => `${n} shows its strength! — ${d} HP`,
-  (n,d) => `${n} pounces! — ${d} HP`,
-  (n,d) => `Great form, ${n}! — ${d} HP`,
-];
-function pickAttackFlavor(name, damage) {
-  const fn = ATTACK_FLAVORS[Math.floor(Math.random() * ATTACK_FLAVORS.length)];
-  return fn(name, damage);
-}
-
 function chooseAttack() {
   const battle = Game.leagueBattle || Game.battle;
   if (Game.busy || battle?.turn !== 'player') return;
   const activePokemon = Game.getActivePokemon();
   if (!activePokemon) return;
-  const { types } = getSpecies(activePokemon.speciesId);
+  const types = getAttackTypes(getSpecies(activePokemon.speciesId));
   const attack = Game.leagueBattle ? leagueAttack : playerAttack;
-  if (types.length === 1) {
-    attack(types[0]);
-    return;
-  }
-
   const enemyTypes = getSpecies(battle.enemy.speciesId).types;
   const dialog = $('#attack-dialog');
   const buttons = types.map(type => {
@@ -237,7 +204,13 @@ function chooseAttack() {
     button.type = 'button';
     button.className = 'attack-option';
     button.style.setProperty('--attack-type-color', TYPE_COLORS[type]);
-    button.textContent = type;
+    const name = document.createElement('span');
+    name.className = 'attack-option-name';
+    name.textContent = ATTACK_MOVES[type].name;
+    const typeLabel = document.createElement('small');
+    typeLabel.textContent = type;
+    name.append(typeLabel);
+    button.append(name);
     const { multiplier, label } = getTypeEffectiveness([type], enemyTypes);
     if (multiplier !== 1) {
       const indicator = document.createElement('span');
@@ -278,11 +251,7 @@ function playerAttack(attackType) {
 
   Game.battle.enemy.currentHp = Math.max(0, Game.battle.enemy.currentHp - damage);
   Game.battle.attacksReceived = (Game.battle.attacksReceived || 0) + 1;
-  Game.audio.play('attack');
-  shakeSprite('#enemy-sprite');
-  showSlash(300);
-  const msg = pickAttackFlavor(allySpecies.name, damage);
-  $('#battle-msg').textContent = eff.label ? msg + ' — ' + eff.label : msg;
+  playPlayerMove(attackType, allySpecies.name, damage, eff.label);
   renderBattle();
 
   setTimeout(() => {
