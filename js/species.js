@@ -96,13 +96,14 @@ const SPECIES = [
   { id:'onix',       name:'Onix',       types:['Rock','Ground'],        dex:95,  color:'#696969', emoji:'🐍', baseHp:115, baseDmg:21, lore:'A giant rock snake. Digs tunnels underground at 50 miles per hour!' },
   { id:'eevee',      name:'Eevee',      types:['Normal'],               dex:133, color:'#C4A46C', emoji:'🦊', baseHp:100, baseDmg:25, lore:'Its DNA is special. Can evolve into many different forms!' },
   { id:'azurill',    name:'Azurill',    types:['Normal','Fairy'],       dex:298, color:'#69B9E8', emoji:'🫧', baseHp:90,  baseDmg:20, lore:'Bounces on its big, rubbery tail and uses it as a float in water.' },
+  { id:'togepi',     name:'Togepi',     types:['Fairy'],                dex:175, color:'#FFF0C2', emoji:'🥚', baseHp:95,  baseDmg:20, lore:'Its eggshell holds the happiness it gathers from those around it.' },
   { id:'carbink',    name:'Carbink',    types:['Rock','Fairy'],         dex:703, color:'#92BFD6', emoji:'💎', baseHp:120, baseDmg:22, lore:'Born deep underground, it sparkles with jewels embedded in its body.' },
   { id:'forretress', name:'Forretress', types:['Bug','Steel'],          dex:205, color:'#A894B8', emoji:'🛡️', baseHp:125, baseDmg:24, lore:'Its sturdy steel shell protects its body. It clings to trees and surprises foes.' },
-  { id:'ronny-hamudi', name:'Ronny Hamudi', types:['Ground'], sprite:'sprites/ronny-hamudi.png', color:'#B6814C', emoji:'🐹', baseHp:105, baseDmg:24, lore:'His big eyes help him find his way through the burrows he digs with his tiny paws.' },
 ];
 
 // Legendary and mythical Pokémon appear rarely in wild encounters.
 const LEGENDARY_SPECIES = [
+  { id:'ronny-hamudi', name:'Ronny Hamudi', types:['Ground'], sprite:'sprites/ronny-hamudi.png', color:'#B6814C', emoji:'🐹', baseHp:380, baseDmg:24, legendary:true, useBaseHpInWild:true, lore:'A mythical Pokémon whose big eyes help him find his way through the burrows he digs with his tiny paws.' },
   { id:'articuno',  name:'Articuno',  types:['Ice','Flying'],      dex:144, color:'#82C9EE', emoji:'❄️', baseHp:145, baseDmg:36, legendary:true, lore:'A legendary bird whose icy wings can make snow fall.' },
   { id:'zapdos',    name:'Zapdos',    types:['Electric','Flying'], dex:145, color:'#E7C52C', emoji:'⚡', baseHp:140, baseDmg:38, legendary:true, lore:'A legendary bird that gains power from thunderstorms.' },
   { id:'moltres',   name:'Moltres',   types:['Fire','Flying'],     dex:146, color:'#E66B32', emoji:'🔥', baseHp:145, baseDmg:37, legendary:true, lore:'A legendary bird whose fiery wings light up the sky.' },
@@ -120,8 +121,11 @@ const LEGENDARY_SPECIES = [
 
 // Evolved forms are available to the player's collection but not the wild pool.
 const EVOLVED_SPECIES = [
+  { id:'king-ronny', name:'King Ronny', types:['Ground'], sprite:'sprites/king-ronny.png', color:'#B6814C', emoji:'👑', baseHp:540, baseDmg:45, legendary:true, lore:'This mythical king wears a golden crown and a giant ruby ring. A stomp from his tiny paws can shake an entire burrow.' },
   { id:'marill',     name:'Marill',     types:['Water','Fairy'],     dex:183, color:'#69B9E8', emoji:'🫧', baseHp:110, baseDmg:25, lore:'Its round tail keeps it afloat while it dives for food.' },
-  { id:'ezumarill',  name:'Ezumarill',  types:['Water','Fairy'],     dex:184, color:'#499CDD', emoji:'🫧', baseHp:135, baseDmg:30, lore:'Its long ears pick up faint sounds even when it swims underwater.' },
+  { id:'azumarill',  name:'Azumarill',  types:['Water','Fairy'],     dex:184, color:'#499CDD', emoji:'🫧', baseHp:135, baseDmg:30, bellyDrumming:true, lore:'Its long ears pick up faint sounds even when it swims underwater.' },
+  { id:'togetic',    name:'Togetic',    types:['Fairy','Flying'],   dex:176, color:'#F1E9DA', emoji:'🪽', baseHp:115, baseDmg:25, lore:'It flies in search of kind people and shares happiness wherever it lands.' },
+  { id:'togekiss',   name:'Togekiss',   types:['Fairy','Flying'],   dex:468, color:'#E2E8F8', emoji:'🕊️', baseHp:140, baseDmg:32, lore:'It glides on broad wings and visits places where people live in peace.' },
   { id:'raichu',     name:'Raichu',     types:['Electric'],          dex:26,  color:'#E6A23C', emoji:'⚡', baseHp:110, baseDmg:30, lore:'Its long tail grounds its powerful electricity.' },
   { id:'charmeleon', name:'Charmeleon', types:['Fire'],              dex:5,   color:'#E65A36', emoji:'🔥', baseHp:110, baseDmg:30, lore:'A fiery fighter whose tail flame burns brighter in battle.' },
   { id:'ivysaur',    name:'Ivysaur',    types:['Grass','Poison'],    dex:2,   color:'#4FAF68', emoji:'🌺', baseHp:120, baseDmg:27, lore:'Sunlight helps the large bud on its back grow strong.' },
@@ -155,7 +159,8 @@ const EVOLVED_SPECIES = [
 ];
 
 const EVOLUTION_MAP = {
-  azurill:'marill', marill:'ezumarill',
+  azurill:'marill', marill:'azumarill',
+  togepi:'togetic', togetic:'togekiss',
   pikachu:'raichu', charmander:'charmeleon', bulbasaur:'ivysaur', squirtle:'wartortle',
   jigglypuff:'wigglytuff', meowth:'persian', psyduck:'golduck', growlithe:'arcanine',
   abra:'kadabra', machop:'machoke', geodude:'graveler', ponyta:'rapidash', slowpoke:'slowbro',
@@ -163,6 +168,7 @@ const EVOLUTION_MAP = {
   charmeleon:'charizard', ivysaur:'venusaur', wartortle:'blastoise', kadabra:'alakazam',
   machoke:'machamp', graveler:'golem', magneton:'magnezone', haunter:'gengar',
   'type-null':'silvally', meltan:'melmetal', kubfu:'urshifu',
+  'ronny-hamudi':'king-ronny',
 };
 
 const WILD_SPECIES = [...SPECIES, ...LEGENDARY_SPECIES];

@@ -64,6 +64,12 @@ async function loadGame() {
   }
 
   if (collection && collection.length > 0) {
+    for (const pokemon of collection) {
+      if (pokemon.speciesId === 'ezumarill') {
+        pokemon.speciesId = 'azumarill';
+        pokemon.name = getSpecies('azumarill').name;
+      }
+    }
     Game.collection = collection;
     if (!Game.activePokemonId) {
       Game.activePokemonId = collection[0].id;

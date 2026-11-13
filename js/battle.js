@@ -59,7 +59,7 @@ function createEnemyPokemon(species) {
   const activePkmn = Game.getActivePokemon();
   if (!activePkmn) { console.error('[Bantso:battle] createEnemyPokemon: no active Pokémon'); return null; }
   const playerStats = Game.getEffectiveStats(activePkmn);
-  const enemyMaxHp = Math.floor(playerStats.maxHp * 0.70);
+  const enemyMaxHp = species.useBaseHpInWild ? species.baseHp : Math.floor(playerStats.maxHp * 0.70);
   console.log('[Bantso:battle] Creating enemy', species.name, '| enemyMaxHp:', enemyMaxHp, '| playerMaxHp:', playerStats.maxHp);
   return {
     speciesId: species.id,
@@ -195,7 +195,8 @@ function chooseAttack() {
   if (Game.busy || battle?.turn !== 'player') return;
   const activePokemon = Game.getActivePokemon();
   if (!activePokemon) return;
-  const types = getAttackTypes(getSpecies(activePokemon.speciesId));
+  const species = getSpecies(activePokemon.speciesId);
+  const types = getAttackTypes(species);
   const attack = Game.leagueBattle ? leagueAttack : playerAttack;
   const enemyTypes = getSpecies(battle.enemy.speciesId).types;
   const dialog = $('#attack-dialog');
@@ -225,8 +226,67 @@ function chooseAttack() {
     });
     return button;
   });
+  if (species.bellyDrumming) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'attack-option';
+    button.style.setProperty('--attack-type-color', TYPE_COLORS.Normal);
+    const label = document.createElement('span');
+    label.className = 'attack-option-name';
+    label.textContent = 'Belly Drumming';
+    const detail = document.createElement('small');
+    const cost = getBellyDrummingCost(activePokemon);
+    const alreadyBoosted = battle.bellyDrummingUsers?.has(activePokemon.id);
+    button.disabled = Boolean(alreadyBoosted) || activePokemon.currentHp <= cost;
+    detail.textContent = alreadyBoosted ? 'Attack already boosted' : `Costs ${cost} HP · 4× attack this battle`;
+    label.append(detail);
+    button.append(label);
+    button.addEventListener('click', () => {
+      dialog.close();
+      useBellyDrumming();
+    });
+    buttons.push(button);
+  }
   $('#attack-options').replaceChildren(...buttons);
   dialog.showModal();
+}
+
+function getBellyDrummingCost(pokemon) {
+  return Math.ceil(Game.getEffectiveStats(pokemon).maxHp / 2);
+}
+
+function useBellyDrumming() {
+  const isLeague = Boolean(Game.leagueBattle);
+  const battle = Game.leagueBattle || Game.battle;
+  const pokemon = Game.getActivePokemon();
+  if (Game.busy || battle?.turn !== 'player' || !pokemon) return;
+  if (!getSpecies(pokemon.speciesId).bellyDrumming || battle.bellyDrummingUsers?.has(pokemon.id)) return;
+  const cost = getBellyDrummingCost(pokemon);
+  if (pokemon.currentHp <= cost) return;
+
+  Game.busy = true;
+  battle.turn = 'animating';
+  battle.bellyDrummingUsers ??= new Set();
+  battle.bellyDrummingUsers.add(pokemon.id);
+  pokemon.currentHp -= cost;
+  Game.audio.play('levelUp');
+  const render = isLeague ? renderLeagueBattle : renderBattle;
+  render();
+  $('#battle-msg').textContent = `Azumarill used Belly Drumming! −${cost} HP, 4× attack!`;
+  setTimeout(() => {
+    if ((Game.leagueBattle || Game.battle) !== battle) return;
+    battle.turn = 'enemy';
+    $('#battle-msg').textContent = battle.enemy.name + ' attacks!';
+    setTimeout(() => {
+      if ((Game.leagueBattle || Game.battle) !== battle) return;
+      if (isLeague) leagueEnemyTurn();
+      else enemyTurn();
+    }, 1200);
+  }, 600);
+}
+
+function getBattleAttackMultiplier(battle, pokemon) {
+  return battle.bellyDrummingUsers?.has(pokemon.id) ? 4 : 1;
 }
 
 function playerAttack(attackType) {
@@ -242,7 +302,7 @@ function playerAttack(attackType) {
   const enemySpecies = getSpecies(Game.battle.enemy.speciesId);
   const stats = Game.getEffectiveStats(activePkmn);
   const variation = Math.floor(Math.random() * 7) - 3;
-  const rawDamage = Math.max(1, stats.damage + variation);
+  const rawDamage = Math.max(1, stats.damage + variation) * getBattleAttackMultiplier(Game.battle, activePkmn);
 
   // Type effectiveness
   const eff = getTypeEffectiveness([attackType], enemySpecies.types);

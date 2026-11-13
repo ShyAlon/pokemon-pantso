@@ -58,7 +58,8 @@ body {
 }
 .attack-option-name { display: grid; gap: 2px; text-align: left; }
 .attack-option-name small { color: #c5c9df; font-size: 12px; }
-#attack-dialog button:hover { background: #3c4265; }
+#attack-dialog button:enabled:hover { background: #3c4265; }
+#attack-dialog button:disabled { opacity: 0.55; cursor: default; }
 #attack-dialog button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 /* ==========================================

@@ -113,7 +113,7 @@ function leagueAttack(attackType) {
   const enemySpecies = getSpecies(Game.leagueBattle.enemy.speciesId);
   const stats = Game.getEffectiveStats(activePkmn);
   const variation = Math.floor(Math.random() * 7) - 3;
-  const rawDamage = Math.max(1, stats.damage + variation);
+  const rawDamage = Math.max(1, stats.damage + variation) * getBattleAttackMultiplier(Game.leagueBattle, activePkmn);
 
   const eff = getTypeEffectiveness([attackType], enemySpecies.types);
   const damage = Math.max(1, Math.round(rawDamage * eff.multiplier));

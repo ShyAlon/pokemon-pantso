@@ -85,17 +85,17 @@ test.describe('Pokémon Bantso — End-to-End', () => {
   });
 
   // ── 3. Species Loaded ──
-  test('loads all 24 regular Pokémon species', async ({ page }) => {
+  test('loads the regular and legendary Pokémon rosters', async ({ page }) => {
     const logs = [];
     page.on('console', msg => { if (msg.type() === 'log') logs.push(msg.text()); });
     await page.goto('/');
     await waitForGameReady(page);
 
     const speciesLog = logs.find(l => l.includes('[Bantso:species] Loaded'));
-    expect(speciesLog).toContain('24 regular and 13 legendary species');
+    expect(speciesLog).toContain('24 regular and 14 legendary species');
   });
 
-  test('renders Ronny Hamudi as a Ground-type wild Pokémon', async ({ page }) => {
+  test('renders Ronny Hamudi as a Ground-type wild Pokémon with 380 HP', async ({ page }) => {
     await page.goto('/');
     await waitForGameReady(page);
 
@@ -105,6 +105,7 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     });
     expect(types).toEqual(['Ground']);
     await expect(page.locator('#enemy-name')).toHaveText('Ronny Hamudi');
+    await expect(page.locator('#enemy-hp-text')).toHaveText(/380\s*\/\s*380/);
     const sprite = page.locator('#enemy-img');
     await expect(sprite).toHaveAttribute('src', 'sprites/ronny-hamudi.png');
     await expect(sprite).toBeVisible();
@@ -234,7 +235,7 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await expect.poll(() => page.evaluate(() => Game.collection[0].speciesId)).toBe('raichu');
   });
 
-  test('evolves Azurill through Marill into Ezumarill', async ({ page }) => {
+  test('evolves Azurill through Marill into Azumarill', async ({ page }) => {
     await page.goto('/');
     await waitForGameReady(page);
     await page.evaluate(() => addPokemonToCollection({ speciesId: 'azurill', name: 'Azurill' }));
@@ -243,8 +244,57 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     const card = name => page.locator('.team-card').filter({ has: page.getByText(name, { exact: true }) });
     await card('Azurill').locator('.evolve-btn').click();
     await card('Marill').locator('.evolve-btn').click();
-    await expect(card('Ezumarill')).toBeVisible();
-    await expect(card('Ezumarill').locator('.evolve-btn')).toHaveCount(0);
+    await expect(card('Azumarill')).toBeVisible();
+    await expect(card('Azumarill').locator('.evolve-btn')).toHaveCount(0);
+  });
+
+  test('Belly Drumming spends half of Azumarill’s max HP and quadruples its next attack', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+    const stats = await page.evaluate(() => {
+      addPokemonToCollection({ speciesId: 'azumarill', name: 'Azumarill' });
+      const azumarill = Game.collection.at(-1);
+      Game.activePokemonId = azumarill.id;
+      startBattle('pikachu', false);
+      Game.battle.enemy.damage = 0;
+      Game.battle.enemy.currentHp = 500;
+      Game.battle.enemy.maxHp = 500;
+      return Game.getEffectiveStats(azumarill);
+    });
+    await page.locator('#btn-attack').click();
+    await page.getByRole('button', { name: /Belly Drumming/ }).click();
+    await expect(page.locator('#btn-attack')).toBeEnabled();
+    expect(await page.evaluate(() => Game.getActivePokemon().currentHp)).toBe(Math.floor(stats.maxHp / 2));
+
+    await page.locator('#btn-attack').click();
+    await expect(page.getByRole('button', { name: /Belly Drumming/ })).toBeDisabled();
+    await page.evaluate(() => { Math.random = () => 0.5; });
+    await page.getByRole('button', { name: /Water Gun/ }).click();
+    expect(await page.evaluate(() => Game.battle.enemy.currentHp)).toBe(500 - 4 * stats.damage);
+  });
+
+  test('evolves mythical Ronny Hamudi into King Ronny with stronger stats', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+    const { baseStats, hpBonus } = await page.evaluate(() => {
+      addPokemonToCollection({ speciesId: 'ronny-hamudi', name: 'Ronny Hamudi' });
+      return {
+        baseStats: Game.getEffectiveStats(Game.collection.at(-1)),
+        hpBonus: (Game.playerLevel - 1) * 15,
+      };
+    });
+    expect(baseStats.maxHp).toBe(380 + hpBonus);
+
+    await page.locator('#team-access-btn').click();
+    await page.locator('.team-card').filter({ hasText: 'Ronny Hamudi' }).locator('.evolve-btn').click();
+    const king = page.locator('.team-card').filter({ hasText: 'King Ronny' });
+    const kingHp = 540 + hpBonus;
+    await expect(king).toContainText(`${kingHp} / ${kingHp}`);
+    const sprite = king.locator('.mini-img');
+    await expect(sprite).toHaveAttribute('src', 'sprites/king-ronny.png');
+    await expect.poll(() => sprite.evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
+    const kingDamage = await page.evaluate(() => Game.getEffectiveStats(Game.collection.at(-1)).damage);
+    expect(kingDamage).toBeGreaterThan(baseStats.damage);
   });
 
   test('chooses a typed attack and shows its matchup against the opponent', async ({ page }) => {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pokemon-bantso-v13';
+const CACHE_NAME = 'pokemon-bantso-v16';
 const urlsToCache = [
   './',
   'index.html',
@@ -6,6 +6,7 @@ const urlsToCache = [
   'icon.svg',
   'trainer.svg',
   'sprites/ronny-hamudi.png',
+  'sprites/king-ronny.png',
   'css/game.css',
   'js/db.js',
   'js/audio.js',
