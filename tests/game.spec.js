@@ -445,8 +445,8 @@ test.describe('Pokémon Bantso — End-to-End', () => {
       };
     });
 
-    expect(legendary.count).toBe(13);
-    expect(legendary.encounter).toBe('articuno');
+    expect(legendary.count).toBe(14);
+    expect(legendary.encounter).toBe('ronny-hamudi');
     expect(legendary.meltanEvolution).toBe('melmetal');
     expect(legendary.nullEvolution).toBe('silvally');
     expect(legendary.kubfuEvolution).toBe('urshifu');
