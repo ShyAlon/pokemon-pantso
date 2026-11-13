@@ -85,14 +85,29 @@ test.describe('Pokémon Bantso — End-to-End', () => {
   });
 
   // ── 3. Species Loaded ──
-  test('loads all 23 regular Pokémon species', async ({ page }) => {
+  test('loads all 24 regular Pokémon species', async ({ page }) => {
     const logs = [];
     page.on('console', msg => { if (msg.type() === 'log') logs.push(msg.text()); });
     await page.goto('/');
     await waitForGameReady(page);
 
     const speciesLog = logs.find(l => l.includes('[Bantso:species] Loaded'));
-    expect(speciesLog).toContain('23 regular and 13 legendary species');
+    expect(speciesLog).toContain('24 regular and 13 legendary species');
+  });
+
+  test('renders Ronny Hamudi as a Ground-type wild Pokémon', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+
+    const types = await page.evaluate(() => {
+      startBattle('ronny-hamudi', false);
+      return getSpecies(Game.battle.enemy.speciesId).types;
+    });
+    expect(types).toEqual(['Ground']);
+    await expect(page.locator('#enemy-name')).toHaveText('Ronny Hamudi');
+    const sprite = page.locator('#enemy-img');
+    await expect(sprite).toHaveAttribute('src', 'sprites/ronny-hamudi.png');
+    await expect(sprite).toBeVisible();
   });
 
   // ── 4. Forest Grid Click ──
@@ -217,6 +232,71 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await page.reload();
     await waitForGameReady(page);
     await expect.poll(() => page.evaluate(() => Game.collection[0].speciesId)).toBe('raichu');
+  });
+
+  test('evolves Azurill through Marill into Ezumarill', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+    await page.evaluate(() => addPokemonToCollection({ speciesId: 'azurill', name: 'Azurill' }));
+    await page.locator('#team-access-btn').click();
+
+    const card = name => page.locator('.team-card').filter({ has: page.getByText(name, { exact: true }) });
+    await card('Azurill').locator('.evolve-btn').click();
+    await card('Marill').locator('.evolve-btn').click();
+    await expect(card('Ezumarill')).toBeVisible();
+    await expect(card('Ezumarill').locator('.evolve-btn')).toHaveCount(0);
+  });
+
+  test('chooses a typed attack and shows its matchup against the opponent', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+    await page.evaluate(() => {
+      addPokemonToCollection({ speciesId: 'bulbasaur', name: 'Bulbasaur' });
+      Game.activePokemonId = Game.collection.at(-1).id;
+      startBattle('geodude', false);
+    });
+
+    const dialog = page.getByRole('dialog', { name: 'Choose an attack' });
+    const attack = page.locator('#btn-attack');
+    await attack.click();
+    await expect(dialog.getByRole('button', { name: /Grass/ })).toHaveText('Grass👍');
+    await expect(dialog.getByRole('button', { name: /Poison/ })).toHaveText('Poison👎');
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden();
+    expect(await page.evaluate(() => Game.battle.attacksReceived)).toBe(0);
+
+    await page.evaluate(() => startBattle('meowth', false));
+    await attack.click();
+    await expect(dialog.getByRole('button', { name: 'Grass' })).toHaveText('Grass');
+    await dialog.press('Escape');
+    await expect(dialog).toBeHidden();
+
+    await page.evaluate(() => startBattle('geodude', false));
+    const initialHp = await page.evaluate(() => Game.battle.enemy.currentHp);
+    await attack.click();
+    await dialog.getByRole('button', { name: /Poison/ }).click();
+    const damage = initialHp - await page.evaluate(() => Game.battle.enemy.currentHp);
+    expect(damage).toBeGreaterThan(0);
+    expect(damage).toBeLessThan(10);
+    await expect(dialog).toBeHidden();
+  });
+
+  test('uses the chosen attack type in a league battle', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+    const initialHp = await page.evaluate(() => {
+      addPokemonToCollection({ speciesId: 'bulbasaur', name: 'Bulbasaur' });
+      Game.activePokemonId = Game.collection.at(-1).id;
+      startLeagueBattle();
+      Game.leagueBattle.enemy.speciesId = 'geodude';
+      renderLeagueBattle();
+      return Game.leagueBattle.enemy.currentHp;
+    });
+
+    await page.locator('#btn-attack').click();
+    await page.getByRole('dialog').getByRole('button', { name: /Grass/ }).click();
+    const damage = initialHp - await page.evaluate(() => Game.leagueBattle.enemy.currentHp);
+    expect(damage).toBeGreaterThan(70);
   });
 
   test('can start and attack in a fight after evolving', async ({ page }) => {

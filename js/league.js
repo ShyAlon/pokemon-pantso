@@ -76,7 +76,7 @@ function renderLeagueBattle() {
   setSpriteImage('ally-img', 'ally-emoji', activePkmn.speciesId);
   $('#ally-name').textContent = allySp.name;
   $('#ally-types').innerHTML = renderTypeBadges(allySp.types);
-  renderMatchup('ally-matchup', allySp.types, enemySp.types);
+  renderMatchup('ally-matchup', allySp.types, enemySp.types, true);
   renderHealthBar('ally-hp-bar', 'ally-hp-text', activePkmn.currentHp, playerStats.maxHp);
 
   setSpriteImage('enemy-img', 'enemy-emoji', enemy.speciesId);
@@ -100,7 +100,7 @@ function updateLeagueBattleActions() {
   $('#btn-swap').disabled = disabled;
 }
 
-function leagueAttack() {
+function leagueAttack(attackType) {
   if (Game.busy || !Game.leagueBattle || Game.leagueBattle.turn !== 'player') return;
   console.log('[Bantso:league] League attack');
   Game.busy = true;
@@ -115,7 +115,7 @@ function leagueAttack() {
   const variation = Math.floor(Math.random() * 7) - 3;
   const rawDamage = Math.max(1, stats.damage + variation);
 
-  const eff = getTypeEffectiveness(allySpecies.types, enemySpecies.types);
+  const eff = getTypeEffectiveness([attackType], enemySpecies.types);
   const damage = Math.max(1, Math.round(rawDamage * eff.multiplier));
 
   Game.leagueBattle.enemy.currentHp = Math.max(0, Game.leagueBattle.enemy.currentHp - damage);

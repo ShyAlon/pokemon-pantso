@@ -136,7 +136,7 @@ function renderBattle() {
   setSpriteImage('ally-img', 'ally-emoji', activePkmn.speciesId);
   $('#ally-name').textContent = allySp.name;
   $('#ally-types').innerHTML = renderTypeBadges(allySp.types);
-  renderMatchup('ally-matchup', allySp.types, enemySp.types);
+  renderMatchup('ally-matchup', allySp.types, enemySp.types, true);
   renderHealthBar('ally-hp-bar', 'ally-hp-text', activePkmn.currentHp, playerStats.maxHp);
 
   setSpriteImage('enemy-img', 'enemy-emoji', enemy.speciesId);
@@ -162,15 +162,17 @@ function renderHealthBar(barId, textId, current, max) {
 }
 
 // Show type matchup indicator — atkTypes vs defTypes
-function renderMatchup(elId, atkTypes, defTypes) {
+function renderMatchup(elId, atkTypes, defTypes, chooseType = false) {
   const el = $(`#${elId}`);
   if (!el) return;
-  const eff = getTypeEffectiveness(atkTypes, defTypes);
+  const multiplier = chooseType
+    ? Math.max(...atkTypes.map(type => getTypeEffectiveness([type], defTypes).multiplier))
+    : getTypeEffectiveness(atkTypes, defTypes).multiplier;
   el.classList.remove('strong', 'weak');
-  if (eff.multiplier > 1.5) {
+  if (multiplier > 1.5) {
     el.textContent = '⚔️ Advantage!';
     el.classList.add('strong');
-  } else if (eff.multiplier < 0.75) {
+  } else if (multiplier < 0.75) {
     el.textContent = '🛡️ Resist…';
     el.classList.add('weak');
   } else {
@@ -216,7 +218,45 @@ function pickAttackFlavor(name, damage) {
   return fn(name, damage);
 }
 
-function playerAttack() {
+function chooseAttack() {
+  const battle = Game.leagueBattle || Game.battle;
+  if (Game.busy || battle?.turn !== 'player') return;
+  const activePokemon = Game.getActivePokemon();
+  if (!activePokemon) return;
+  const { types } = getSpecies(activePokemon.speciesId);
+  const attack = Game.leagueBattle ? leagueAttack : playerAttack;
+  if (types.length === 1) {
+    attack(types[0]);
+    return;
+  }
+
+  const enemyTypes = getSpecies(battle.enemy.speciesId).types;
+  const dialog = $('#attack-dialog');
+  const buttons = types.map(type => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'attack-option';
+    button.style.setProperty('--attack-type-color', TYPE_COLORS[type]);
+    button.textContent = type;
+    const { multiplier, label } = getTypeEffectiveness([type], enemyTypes);
+    if (multiplier !== 1) {
+      const indicator = document.createElement('span');
+      indicator.setAttribute('role', 'img');
+      indicator.setAttribute('aria-label', label);
+      indicator.textContent = multiplier > 1 ? '👍' : '👎';
+      button.append(indicator);
+    }
+    button.addEventListener('click', () => {
+      dialog.close();
+      attack(type);
+    });
+    return button;
+  });
+  $('#attack-options').replaceChildren(...buttons);
+  dialog.showModal();
+}
+
+function playerAttack(attackType) {
   if (Game.busy || !Game.battle || Game.battle.turn !== 'player') return;
   console.log('[Bantso:battle] Player attacks');
   Game.busy = true;
@@ -232,7 +272,7 @@ function playerAttack() {
   const rawDamage = Math.max(1, stats.damage + variation);
 
   // Type effectiveness
-  const eff = getTypeEffectiveness(allySpecies.types, enemySpecies.types);
+  const eff = getTypeEffectiveness([attackType], enemySpecies.types);
   const damage = Math.max(1, Math.round(rawDamage * eff.multiplier));
   console.log('[Bantso:battle] Damage:', damage, '(raw:', rawDamage, 'x', eff.multiplier.toFixed(1), eff.label, ')');
 

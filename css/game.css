@@ -20,6 +20,45 @@ body {
   margin: 0 auto;
 }
 
+#attack-dialog {
+  margin: auto;
+  width: min(360px, calc(100% - 32px));
+  padding: 24px;
+  color: #fff;
+  background: linear-gradient(155deg, #303553, #1a1a2e);
+  border: 2px solid #626a94;
+  border-radius: 20px;
+  box-shadow: 0 16px 48px #0009;
+}
+#attack-dialog::backdrop { background: #0b0b18b8; }
+#attack-dialog h2 { font-size: 22px; margin-bottom: 16px; }
+#attack-options { display: grid; gap: 10px; }
+#attack-dialog button {
+  min-height: 44px;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.attack-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #272b44;
+  border: 1px solid #626a94;
+  border-left: 6px solid var(--attack-type-color);
+}
+.attack-cancel {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+#attack-dialog button:hover { background: #3c4265; }
+#attack-dialog button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
 /* ==========================================
    PROGRESS BAR (top 12%)
    ========================================== */

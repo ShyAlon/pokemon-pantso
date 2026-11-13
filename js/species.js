@@ -71,6 +71,7 @@ const SPECIES = [
   { id:'azurill',    name:'Azurill',    types:['Normal','Fairy'],       dex:298, color:'#69B9E8', emoji:'🫧', baseHp:90,  baseDmg:20, lore:'Bounces on its big, rubbery tail and uses it as a float in water.' },
   { id:'carbink',    name:'Carbink',    types:['Rock','Fairy'],         dex:703, color:'#92BFD6', emoji:'💎', baseHp:120, baseDmg:22, lore:'Born deep underground, it sparkles with jewels embedded in its body.' },
   { id:'forretress', name:'Forretress', types:['Bug','Steel'],          dex:205, color:'#A894B8', emoji:'🛡️', baseHp:125, baseDmg:24, lore:'Its sturdy steel shell protects its body. It clings to trees and surprises foes.' },
+  { id:'ronny-hamudi', name:'Ronny Hamudi', types:['Ground'], sprite:'sprites/ronny-hamudi.png', color:'#B6814C', emoji:'🐹', baseHp:105, baseDmg:24, lore:'His big eyes help him find his way through the burrows he digs with his tiny paws.' },
 ];
 
 // Legendary and mythical Pokémon appear rarely in wild encounters.
@@ -92,6 +93,8 @@ const LEGENDARY_SPECIES = [
 
 // Evolved forms are available to the player's collection but not the wild pool.
 const EVOLVED_SPECIES = [
+  { id:'marill',     name:'Marill',     types:['Water','Fairy'],     dex:183, color:'#69B9E8', emoji:'🫧', baseHp:110, baseDmg:25, lore:'Its round tail keeps it afloat while it dives for food.' },
+  { id:'ezumarill',  name:'Ezumarill',  types:['Water','Fairy'],     dex:184, color:'#499CDD', emoji:'🫧', baseHp:135, baseDmg:30, lore:'Its long ears pick up faint sounds even when it swims underwater.' },
   { id:'raichu',     name:'Raichu',     types:['Electric'],          dex:26,  color:'#E6A23C', emoji:'⚡', baseHp:110, baseDmg:30, lore:'Its long tail grounds its powerful electricity.' },
   { id:'charmeleon', name:'Charmeleon', types:['Fire'],              dex:5,   color:'#E65A36', emoji:'🔥', baseHp:110, baseDmg:30, lore:'A fiery fighter whose tail flame burns brighter in battle.' },
   { id:'ivysaur',    name:'Ivysaur',    types:['Grass','Poison'],    dex:2,   color:'#4FAF68', emoji:'🌺', baseHp:120, baseDmg:27, lore:'Sunlight helps the large bud on its back grow strong.' },
@@ -125,6 +128,7 @@ const EVOLVED_SPECIES = [
 ];
 
 const EVOLUTION_MAP = {
+  azurill:'marill', marill:'ezumarill',
   pikachu:'raichu', charmander:'charmeleon', bulbasaur:'ivysaur', squirtle:'wartortle',
   jigglypuff:'wigglytuff', meowth:'persian', psyduck:'golduck', growlithe:'arcanine',
   abra:'kadabra', machop:'machoke', geodude:'graveler', ponyta:'rapidash', slowpoke:'slowbro',
@@ -152,7 +156,7 @@ function getEvolution(speciesId) {
 
 function getSpriteUrl(speciesId) {
   const s = getSpecies(speciesId);
-  return SPRITE_BASE + s.dex + '.png';
+  return s.sprite ?? (SPRITE_BASE + s.dex + '.png');
 }
 
 // ---- Type effectiveness ----

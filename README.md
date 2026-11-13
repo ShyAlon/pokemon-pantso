@@ -140,7 +140,7 @@ All 20 Pokémon have canonical types (1–2 each). Attacks apply the full **18-t
 | **0.5×** | Not very effective | Fire → Water |
 | **0×** | No effect | Normal → Ghost |
 
-Dual-type defenders multiply both matchups. The battle message shows the effectiveness label:
+Press **Attack** to choose one of your Pokémon's types when it has two. The picker shows 👍 for favorable attacks and 👎 for unfavorable attacks. Single-type Pokémon attack immediately. Dual-type defenders multiply both matchups against the selected attack type. The battle message shows the effectiveness label:
 
 > *"Squirtle tackles hard! — 50 HP — Super effective!"*
 

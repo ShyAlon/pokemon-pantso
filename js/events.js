@@ -25,10 +25,7 @@ function setupEventHandlers() {
   });
 
   // Battle actions
-  $('#btn-attack').addEventListener('click', () => {
-    console.log('[Bantso:event] ATTACK button clicked | leagueBattle:', !!Game.leagueBattle);
-    if (Game.leagueBattle) { leagueAttack(); } else { playerAttack(); }
-  });
+  $('#btn-attack').addEventListener('click', chooseAttack);
   $('#btn-catch').addEventListener('click', () => {
     console.log('[Bantso:event] CATCH button clicked');
     playerCatch();
