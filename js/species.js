@@ -121,6 +121,11 @@ const LEGENDARY_SPECIES = [
 
 // Evolved forms are available to the player's collection but not the wild pool.
 const EVOLVED_SPECIES = [
+  { id:'vaporeon', name:'Vaporeon', types:['Water'], dex:134, color:'#559DD9', emoji:'💧', baseHp:140, baseDmg:28, lore:'Its body blends into the water when it swims.' },
+  { id:'jolteon', name:'Jolteon', types:['Electric'], dex:135, color:'#EAC344', emoji:'⚡', baseHp:105, baseDmg:33, lore:'Its spiky fur crackles with electricity.' },
+  { id:'flareon', name:'Flareon', types:['Fire'], dex:136, color:'#E87C42', emoji:'🔥', baseHp:115, baseDmg:32, lore:'It stores heat inside its body to breathe fire.' },
+  { id:'leafeon', name:'Leafeon', types:['Grass'], dex:470, color:'#87B566', emoji:'🍃', baseHp:120, baseDmg:29, lore:'It makes its own energy from sunlight like a plant.' },
+  { id:'glaceon', name:'Glaceon', types:['Ice'], dex:471, color:'#84C8DE', emoji:'❄️', baseHp:115, baseDmg:31, lore:'It chills the air around it to make tiny ice crystals.' },
   { id:'king-ronny', name:'King Ronny', types:['Ground'], sprite:'sprites/king-ronny.png', color:'#B6814C', emoji:'👑', baseHp:540, baseDmg:45, legendary:true, lore:'This mythical king wears a golden crown and a giant ruby ring. A stomp from his tiny paws can shake an entire burrow.' },
   { id:'marill',     name:'Marill',     types:['Water','Fairy'],     dex:183, color:'#69B9E8', emoji:'🫧', baseHp:110, baseDmg:25, lore:'Its round tail keeps it afloat while it dives for food.' },
   { id:'azumarill',  name:'Azumarill',  types:['Water','Fairy'],     dex:184, color:'#499CDD', emoji:'🫧', baseHp:135, baseDmg:30, bellyDrumming:true, lore:'Its long ears pick up faint sounds even when it swims underwater.' },
@@ -158,17 +163,33 @@ const EVOLVED_SPECIES = [
   { id:'urshifu',    name:'Urshifu',    types:['Fighting','Dark'],  dex:892, color:'#4F5660', emoji:'🥋', baseHp:155, baseDmg:43, legendary:true, lore:'Years of training turned its movements into powerful martial arts.' },
 ];
 
+const STONES = {
+  water:   { name: 'Water Stone',   icon: '💧', color: '#74ceff', terrain: 'river' },
+  thunder: { name: 'Thunder Stone', icon: '⚡', color: '#ffe278', terrain: 'storm' },
+  fire:    { name: 'Fire Stone',    icon: '🔥', color: '#ff9b68', terrain: 'fire' },
+  leaf:    { name: 'Leaf Stone',    icon: '🍃', color: '#a9ec78', terrain: 'trees' },
+  ice:     { name: 'Ice Stone',     icon: '❄️', color: '#b0f0ff', terrain: 'iceberg' },
+  moon:    { name: 'Moon Stone',    icon: '🌙', color: '#c8c6e3', terrain: 'rocks' },
+  shiny:   { name: 'Shiny Stone',   icon: '✨', color: '#fff5d1' },
+};
+
 const EVOLUTION_MAP = {
-  azurill:'marill', marill:'azumarill',
-  togepi:'togetic', togetic:'togekiss',
-  pikachu:'raichu', charmander:'charmeleon', bulbasaur:'ivysaur', squirtle:'wartortle',
-  jigglypuff:'wigglytuff', meowth:'persian', psyduck:'golduck', growlithe:'arcanine',
-  abra:'kadabra', machop:'machoke', geodude:'graveler', ponyta:'rapidash', slowpoke:'slowbro',
-  magnemite:'magneton', doduo:'dodrio', seel:'dewgong', grimer:'muk', gastly:'haunter', onix:'steelix',
-  charmeleon:'charizard', ivysaur:'venusaur', wartortle:'blastoise', kadabra:'alakazam',
-  machoke:'machamp', graveler:'golem', magneton:'magnezone', haunter:'gengar',
-  'type-null':'silvally', meltan:'melmetal', kubfu:'urshifu',
-  'ronny-hamudi':'king-ronny',
+  eevee: { water: 'vaporeon', thunder: 'jolteon', fire: 'flareon', leaf: 'leafeon', ice: 'glaceon' },
+  azurill: { none: 'marill' }, marill: { none: 'azumarill' },
+  togepi: { none: 'togetic' }, togetic: { shiny: 'togekiss' },
+  pikachu: { thunder: 'raichu' }, charmander: { none: 'charmeleon' },
+  bulbasaur: { none: 'ivysaur' }, squirtle: { none: 'wartortle' },
+  jigglypuff: { moon: 'wigglytuff' }, meowth: { none: 'persian' },
+  psyduck: { none: 'golduck' }, growlithe: { fire: 'arcanine' },
+  abra: { none: 'kadabra' }, machop: { none: 'machoke' }, geodude: { none: 'graveler' },
+  ponyta: { none: 'rapidash' }, slowpoke: { none: 'slowbro' },
+  magnemite: { none: 'magneton' }, doduo: { none: 'dodrio' }, seel: { none: 'dewgong' },
+  grimer: { none: 'muk' }, gastly: { none: 'haunter' }, onix: { none: 'steelix' },
+  charmeleon: { none: 'charizard' }, ivysaur: { none: 'venusaur' }, wartortle: { none: 'blastoise' },
+  kadabra: { none: 'alakazam' }, machoke: { none: 'machamp' }, graveler: { none: 'golem' },
+  magneton: { thunder: 'magnezone' }, haunter: { none: 'gengar' },
+  'type-null': { none: 'silvally' }, meltan: { none: 'melmetal' }, kubfu: { none: 'urshifu' },
+  'ronny-hamudi': { none: 'king-ronny' },
 };
 
 const WILD_SPECIES = [...SPECIES, ...LEGENDARY_SPECIES];
@@ -182,8 +203,11 @@ function getSpecies(id) {
   return s || SPECIES[0];
 }
 
-function getEvolution(speciesId) {
-  const evolvedId = EVOLUTION_MAP[speciesId];
+function getEvolution(speciesId, stoneType) {
+  const options = EVOLUTION_MAP[speciesId];
+  if (!options) return null;
+  const types = Object.keys(options);
+  const evolvedId = options[stoneType ?? (types.length === 1 ? types[0] : '')];
   return evolvedId ? getSpecies(evolvedId) : null;
 }
 

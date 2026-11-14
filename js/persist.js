@@ -4,26 +4,28 @@
 //  js/persist.js — Save / load game state to IndexedDB
 // ============================================================
 
-async function saveGame() {
-  if (!Game.db) { console.warn('[Bantso:persist] saveGame called but db is null'); return; }
-  console.log('[Bantso:persist] Saving game… level:', Game.playerLevel, 'collection:', Game.collection.length);
-  await dbPut(Game.db, 'playerState', {
-    id: 'main_player',
-    level: Game.playerLevel,
-    caughtCount: Game.caughtCount,
-    caughtSpecies: Game.caughtSpecies,
-    activePokemonId: Game.activePokemonId,
-    leagueUnlocked: Game.leagueUnlocked,
-    hardMode: Game.hardMode,
+function saveGame(releasedId = null) {
+  if (!Game.db) { console.warn('[Bantso:persist] saveGame called but db is null'); return Promise.resolve(); }
+  return new Promise((resolve, reject) => {
+    const tx = Game.db.transaction(['playerState', 'collection', 'leagueState'], 'readwrite');
+    tx.oncomplete = resolve;
+    tx.onabort = () => reject(tx.error);
+
+    tx.objectStore('playerState').put({
+      id: 'main_player',
+      level: Game.playerLevel,
+      caughtCount: Game.caughtCount,
+      caughtSpecies: Game.caughtSpecies,
+      activePokemonId: Game.activePokemonId,
+      leagueUnlocked: Game.leagueUnlocked,
+      hardMode: Game.hardMode,
+      stones: Game.stones,
+    });
+    const collection = tx.objectStore('collection');
+    if (releasedId !== null) collection.delete(releasedId);
+    for (const pokemon of Game.collection) collection.put(pokemon);
+    tx.objectStore('leagueState').put({ id: 'league', wins: Game.leagueWins });
   });
-  for (const p of Game.collection) {
-    await dbPut(Game.db, 'collection', p);
-  }
-  await dbPut(Game.db, 'leagueState', {
-    id: 'league',
-    wins: Game.leagueWins,
-  });
-  console.log('[Bantso:persist] Save complete');
 }
 
 async function loadGame() {
@@ -37,6 +39,7 @@ async function loadGame() {
 
   console.log('[Bantso:persist] Loaded state:', state ? 'found' : 'none', '| collection:', collection.length, '| leagueState:', leagueState ? 'found' : 'none');
 
+  Game.stones = state?.stones ?? {};
   if (state) {
     Game.caughtCount = state.caughtCount || 1;
     Game.caughtSpecies = state.caughtSpecies || ['pikachu'];
@@ -50,17 +53,10 @@ async function loadGame() {
   }
 
   // Retroactive unlock for legacy players already at max level
-  if (!Game.leagueUnlocked && Game.isMaxLevel) {
+  if (state && !Game.leagueUnlocked && Game.isMaxLevel) {
     console.log('[Bantso:persist] Retroactive league unlock — player already at max level');
     Game.leagueUnlocked = true;
-    await dbPut(db, 'playerState', {
-      id: 'main_player',
-      level: Game.playerLevel,
-      caughtCount: Game.caughtCount,
-      caughtSpecies: Game.caughtSpecies,
-      activePokemonId: Game.activePokemonId,
-      leagueUnlocked: true,
-    });
+    await dbPut(db, 'playerState', { ...state, leagueUnlocked: true });
   }
 
   if (collection && collection.length > 0) {

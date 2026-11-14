@@ -6,13 +6,56 @@
 
 function toggleMenu() {
   const dropdown = $('#menu-dropdown');
-  dropdown.classList.toggle('active');
+  const isOpen = dropdown.classList.toggle('active');
+  $('#menu-btn').setAttribute('aria-expanded', isOpen);
   console.log('[Bantso:menu] Toggle menu | now:', dropdown.classList.contains('active') ? 'open' : 'closed');
   Game.audio.play('click');
 }
 
 function closeMenu() {
   $('#menu-dropdown').classList.remove('active');
+  $('#menu-btn').setAttribute('aria-expanded', 'false');
+}
+
+function setupManual() {
+  const dialog = $('#manual-dialog');
+  const tabList = dialog.querySelector('.manual-tabs');
+  const tabs = [...tabList.querySelectorAll('[role="tab"]')];
+
+  function selectTab(activeTab) {
+    for (const tab of tabs) {
+      const selected = tab === activeTab;
+      tab.setAttribute('aria-selected', selected);
+      tab.tabIndex = selected ? 0 : -1;
+      document.getElementById(tab.getAttribute('aria-controls')).hidden = !selected;
+    }
+  }
+
+  $('#menu-manual').addEventListener('click', () => {
+    closeMenu();
+    dialog.showModal();
+  });
+  dialog.addEventListener('close', () => $('#menu-btn').focus());
+
+  tabList.addEventListener('click', event => {
+    const tab = event.target.closest('[role="tab"]');
+    if (tab) selectTab(tab);
+  });
+  tabList.addEventListener('keydown', event => {
+    const index = tabs.indexOf(event.target);
+    if (index < 0) return;
+    const targets = {
+      ArrowLeft: (index + tabs.length - 1) % tabs.length,
+      ArrowRight: (index + 1) % tabs.length,
+      Home: 0,
+      End: tabs.length - 1,
+    };
+    if (!Object.hasOwn(targets, event.key)) return;
+    event.preventDefault();
+    const tab = tabs[targets[event.key]];
+    selectTab(tab);
+    tab.focus();
+  });
 }
 
 function showConfirm(title, msg, onYes) {
@@ -32,9 +75,12 @@ function showConfirm(title, msg, onYes) {
 }
 
 async function doRestart() {
+  if (Game.busy && Game.screen === 'forest') return;
   closeMenu();
   Game.audio.play('click');
   console.log('[Bantso:menu] === RESTARTING GAME ===');
+  Game.pendingEvolution = null;
+  Game.stones = {};
   Game.caughtCount = 1;
   Game.caughtSpecies = ['pikachu'];
   Game.level = 1;
@@ -81,11 +127,14 @@ async function doRestart() {
 }
 
 async function doNewGame(hardMode = false) {
+  if (Game.busy && Game.screen === 'forest') return;
   closeMenu();
   Game.audio.play('click');
   console.log('[Bantso:menu] === NEW GAME (full wipe) ===');
   await clearAllData();
 
+  Game.pendingEvolution = null;
+  Game.stones = {};
   Game.caughtCount = 1;
   Game.caughtSpecies = ['pikachu'];
   Game.level = 1;
@@ -96,7 +145,6 @@ async function doNewGame(hardMode = false) {
   Game.busy = false;
   Game.scrollOffset = 0;
   Game.hardMode = hardMode;
-  Game.pendingEvolutionId = null;
   Game.collection = [{
     id: 'pikachu_01',
     speciesId: 'pikachu',

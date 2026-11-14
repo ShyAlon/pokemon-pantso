@@ -51,6 +51,7 @@ function setupEventHandlers() {
   });
 
   $('#team-access-btn').addEventListener('click', () => {
+    if (Game.busy) return;
     console.log('[Bantso:event] Team access button clicked (forest)');
     openTeamOverlay('forest');
     Game.audio.play('click');
@@ -86,6 +87,7 @@ function setupEventHandlers() {
   });
 
   // Menu
+  setupManual();
   $('#menu-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     toggleMenu();
@@ -110,13 +112,13 @@ function setupEventHandlers() {
     showScreen('league-arena');
     renderLeagueArena();
   });
-  $('#league-forest-btn').addEventListener('click', () => {
-    console.log('[Bantso:event] League Forest clicked');
+  function returnToForest() {
     Game.audio.play('click');
     showScreen('forest');
     renderForestScreen();
-    updateProgressBar();
-  });
+  }
+  $('#league-forest-btn').addEventListener('click', returnToForest);
+  $('#arena-forest-btn').addEventListener('click', returnToForest);
   $('#league-restart-btn').addEventListener('click', () => {
     console.log('[Bantso:event] League Restart clicked');
     showConfirm('Restart?', 'Keep starter, reset progress.', doRestart);

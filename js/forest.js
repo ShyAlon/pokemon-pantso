@@ -5,14 +5,24 @@
 // ============================================================
 
 const GRID_SIZE = 11;
-const TILE_HW = 64;  // half-width of diamond
-const TILE_HH = 32;  // half-height of diamond
-const TILE_SZ = TILE_HW * 2; // full tile square size (128px)
+const LANDMARKS = {
+  river:   { name: 'River', icon: '🌊', tiles: [[2, 1], [2, 2], [3, 2], [3, 3]] },
+  storm:   { name: 'Thunderstorm', icon: '⛈️', tiles: [[2, 7], [2, 8], [3, 8]] },
+  fire:    { name: 'Small fire', icon: '🔥', tiles: [[7, 3], [8, 3], [8, 4]] },
+  rocks:   { name: 'Rocky outcrop', icon: '🪨', tiles: [[4, 9], [5, 9], [5, 10]] },
+  iceberg: { name: 'Iceberg', icon: '🧊', tiles: [[7, 7], [7, 8], [8, 7], [8, 8]] },
+};
 
-// Per-tile terrain: 'grass' | 'bush' | 'trees'
 let gridTerrain = [];
-// Hint tiles: [{row, col, speciesId}]
 let hintTiles = [];
+let stoneTiles = [];
+let unspawnedStoneTypes = [];
+let shinySpawnBatch = 0;
+let tileWidth = 0;
+let tileHeight = 0;
+let mapTop = 0;
+let mapLeft = 0;
+let pickupTimer;
 // Player position on the grid
 let playerPos = { row: 5, col: 5 };
 // Hint spawn timer handle
@@ -21,6 +31,8 @@ let hintTimer = null;
 function renderForestScreen() {
   console.log('[Bantso:forest] Rendering isometric forest');
   updateProgressBar();
+  clearTimeout(pickupTimer);
+  $('#stone-pickup').hidden = true;
   initGrid();
   spawnHints();
   renderIsometricGrid();
@@ -43,6 +55,9 @@ function setupGridDelegation() {
       onTileClick(row, col);
     }
   });
+  window.addEventListener('resize', () => {
+    if (Game.screen === 'forest') renderIsometricGrid();
+  });
   gridDelegationSetup = true;
   console.log('[Bantso:forest] Grid delegation active');
 }
@@ -64,52 +79,33 @@ function initGrid() {
       }
     }
   }
-  // Starting position is always grass
-  gridTerrain[playerPos.row][playerPos.col] = 'grass';
+  for (const [terrain, landmark] of Object.entries(LANDMARKS)) {
+    for (const [row, col] of landmark.tiles) gridTerrain[row][col] = terrain;
+  }
+  gridTerrain[5][5] = 'grass';
+  gridTerrain[7][1] = 'trees';
+  gridTerrain[8][1] = 'trees';
   console.log('[Bantso:forest] Grid initialized | size:', GRID_SIZE + 'x' + GRID_SIZE);
 }
 
 function tileToScreen(row, col) {
-  const gridEl = $('#iso-grid');
-  if (!gridEl) return { x: 0, y: 0 };
-  const rect = gridEl.getBoundingClientRect();
-  const cx = rect.width / 2;
-  const cy = rect.height * 0.35;
   return {
-    x: cx + (col - row) * TILE_HW,
-    y: cy + (col + row) * TILE_HH
+    x: mapLeft + (GRID_SIZE + col - row) * tileWidth / 2,
+    y: mapTop + (col + row + 1) * tileHeight / 2,
   };
-}
-
-function screenToTile(sx, sy) {
-  const gridEl = $('#iso-grid');
-  if (!gridEl) return null;
-  const rect = gridEl.getBoundingClientRect();
-  const cx = rect.width / 2;
-  const cy = rect.height * 0.35;
-  const dx = sx - cx;
-  const dy = sy - cy;
-  const col = (dx / TILE_HW + dy / TILE_HH) / 2;
-  const row = (dy / TILE_HH - dx / TILE_HW) / 2;
-  const rr = Math.round(row);
-  const cc = Math.round(col);
-  if (rr < 0 || rr >= GRID_SIZE || cc < 0 || cc >= GRID_SIZE) return null;
-  return { row: rr, col: cc };
 }
 
 function renderIsometricGrid() {
   const gridEl = $('#iso-grid');
-  if (!gridEl) return;
-
-  const rect = gridEl.getBoundingClientRect();
-  const cx = rect.width / 2;
-  const cy = rect.height * 0.35;
+  const { width, height } = gridEl.parentElement.getBoundingClientRect();
+  tileHeight = Math.min(width / (2 * GRID_SIZE), (height - 42) / GRID_SIZE);
+  tileWidth = tileHeight * 2;
+  mapTop = (height - tileHeight * GRID_SIZE) / 2;
+  mapLeft = (width - GRID_SIZE * tileWidth) / 2;
+  gridEl.style.setProperty('--tile-width', `${tileWidth}px`);
+  gridEl.style.setProperty('--tile-height', `${tileHeight}px`);
 
   let html = '';
-  // Add decorative clouds
-  html += '<div style="position:absolute;top:3%;left:10%;font-size:36px;opacity:0.5;pointer-events:none">☁️</div>';
-  html += '<div style="position:absolute;top:8%;right:15%;font-size:28px;opacity:0.4;pointer-events:none">☁️</div>';
-
   // Render tiles back-to-front for proper layering
   for (let sum = 0; sum < (GRID_SIZE - 1) * 2 + 1; sum++) {
     for (let r = 0; r < GRID_SIZE; r++) {
@@ -118,32 +114,29 @@ function renderIsometricGrid() {
 
       const { x, y } = tileToScreen(r, c);
       const terrain = gridTerrain[r][c];
-      const isHint = hintTiles.some(h => h.row === r && h.col === c);
+      const hint = hintTiles.find(h => h.row === r && h.col === c);
       const z = (r + c) * 2;
-      const tileClass = isHint ? 'iso-tile hint' : 'iso-tile ' + terrain;
+      const tileClass = `iso-tile ${terrain}${hint && !Game.isMaxLevel ? ' hint' : ''}`;
+      const landmark = LANDMARKS[terrain];
+      const stone = stoneTiles.find(tile => tile.row === r && tile.col === c);
 
-      html += `<div class="${tileClass}" style="left:${x - TILE_SZ/2}px;top:${y - TILE_SZ/2}px;z-index:${z}"
+      html += `<div class="${tileClass}" style="left:${x - tileWidth / 2}px;top:${y - tileHeight / 2}px;z-index:${z}"
         data-row="${r}" data-col="${c}"></div>`;
 
-      // Decorations on top of tile
-      if (terrain === 'trees') {
-        html += `<div class="iso-tree-top" style="left:${x - 24}px;top:${y - 82}px;z-index:${z + 5}"></div>`;
-        html += `<div class="iso-tree-trunk" style="left:${x - 6}px;top:${y - 32}px;z-index:${z + 4}"></div>`;
-      } else if (terrain === 'bush') {
-        html += `<div class="iso-bush" style="left:${x - 22}px;top:${y - 46}px;z-index:${z + 5}"></div>`;
-        html += `<div class="iso-bush" style="left:${x + 4}px;top:${y - 52}px;z-index:${z + 5};width:32px;height:24px"></div>`;
+      const position = `left:${x}px;top:${y}px;z-index:${z + 1}`;
+      if (landmark) {
+        html += `<span class="terrain-marker" role="img" aria-label="${landmark.name}" style="${position}">${landmark.icon}</span>`;
+      } else if (terrain === 'trees' || terrain === 'bush') {
+        html += `<span class="terrain-marker" aria-hidden="true" style="${position}">${terrain === 'trees' ? '🌲' : '🌿'}</span>`;
       }
 
-      // Type-specific hint emojis
-      if (isHint) {
-        const hintSp = getSpecies(hintTiles.find(h => h.row === r && h.col === c).speciesId);
-        const e1 = TYPE_HINT_EMOJI[hintSp.types[0]] || '🌟';
-        const e2 = hintSp.types[1] ? TYPE_HINT_EMOJI[hintSp.types[1]] : '✨';
-        html += `<div class="hint-leaves" style="left:${x - 14}px;top:${y - 76}px">${e1}</div>`;
-        html += `<div class="hint-leaves" style="left:${x + 8}px;top:${y - 66}px;animation-delay:0.2s">💫</div>`;
-        if (hintSp.types[1]) {
-          html += `<div class="hint-leaves" style="left:${x - 4}px;top:${y - 56}px;animation-delay:0.1s;font-size:16px">${e2}</div>`;
-        }
+      if (stone) {
+        const { icon, name, color } = STONES[stone.type];
+        html += `<button class="stone-marker ${stone.type}" data-row="${r}" data-col="${c}" data-stone="${stone.type}"
+          aria-label="Collect ${name}" title="${name}" style="${position};--stone-color:${color}">${icon}</button>`;
+      } else if (hint && !Game.isMaxLevel) {
+        const [primary, secondary] = getSpecies(hint.speciesId).types;
+        html += `<span class="hint-leaves" style="${position}">${TYPE_HINT_EMOJI[primary] || '🌟'}${TYPE_HINT_EMOJI[secondary] || '✨'}</span>`;
       }
     }
   }
@@ -158,7 +151,7 @@ function updateChildPosition() {
   if (!charEl) return;
   const { x, y } = tileToScreen(playerPos.row, playerPos.col);
   charEl.style.left = (x - 18) + 'px';
-  charEl.style.top = (y - 78) + 'px';
+  charEl.style.top = (y - 50) + 'px';
 }
 
 function spawnHints() {
@@ -182,6 +175,26 @@ function spawnHints() {
     [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
   }
 
+  // Rotate all seven stones through two batches, with a random batch for the glint.
+  if (!unspawnedStoneTypes.length) {
+    unspawnedStoneTypes = Object.keys(STONES).filter(type => STONES[type].terrain);
+    shinySpawnBatch = Math.floor(Math.random() * 2);
+    for (let i = unspawnedStoneTypes.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [unspawnedStoneTypes[i], unspawnedStoneTypes[j]] = [unspawnedStoneTypes[j], unspawnedStoneTypes[i]];
+    }
+  }
+  const stoneTypes = unspawnedStoneTypes.splice(0, 3);
+  if (unspawnedStoneTypes.length / 3 === shinySpawnBatch) stoneTypes.push('shiny');
+
+  stoneTiles = [];
+  for (const type of stoneTypes) {
+    const index = candidates.findIndex(({ row, col }) =>
+      type === 'shiny' || gridTerrain[row][col] === STONES[type].terrain
+    );
+    if (index >= 0) stoneTiles.push({ ...candidates.splice(index, 1)[0], type });
+  }
+
   // Pick uncaught species for each hint
   const uncaught = SPECIES.filter(s => !Game.caughtSpecies.includes(s.id));
   const speciesPool = uncaught.length > 0 ? uncaught : SPECIES;
@@ -192,18 +205,24 @@ function spawnHints() {
 
   console.log('[Bantso:forest] Hints spawned:', count, '| at', hintTiles.map(h => '(' + h.row + ',' + h.col + ' ' + h.speciesId + ')').join(' '));
 
-  // Schedule hint refresh
-  if (hintTimer) clearTimeout(hintTimer);
+  scheduleHintRefresh();
+}
+
+function scheduleHintRefresh() {
+  clearTimeout(hintTimer);
   hintTimer = setTimeout(() => {
-    if (Game.screen === 'forest' && !Game.busy) {
-      spawnHints();
-      renderIsometricGrid();
+    if (Game.screen !== 'forest') return;
+    if (Game.busy || Game.teamContext) {
+      scheduleHintRefresh();
+      return;
     }
-  }, 12000); // Refresh hints every 12 seconds
+    spawnHints();
+    renderIsometricGrid();
+  }, 12000);
 }
 
 function onTileClick(row, col) {
-  if (Game.busy || Game.screen !== 'forest' || Game.isMaxLevel) {
+  if (Game.busy || Game.screen !== 'forest') {
     console.log('[Bantso:forest] Tile click blocked | busy:', Game.busy, '| screen:', Game.screen);
     return;
   }
@@ -211,7 +230,13 @@ function onTileClick(row, col) {
   console.log('[Bantso:forest] Tile clicked:', row, col, '| player at:', playerPos.row, playerPos.col);
 
   // If clicking same tile, just bounce
+  const headingToStone = stoneTiles.some(tile => tile.row === row && tile.col === col);
   if (row === playerPos.row && col === playerPos.col) {
+    if (headingToStone) {
+      Game.busy = true;
+      walkPath([playerPos], 0, true);
+      return;
+    }
     bounceChild();
     Game.audio.play('click');
     return;
@@ -226,7 +251,7 @@ function onTileClick(row, col) {
 
   console.log('[Bantso:forest] Path length:', path.length);
   Game.busy = true;
-  walkPath(path, 0);
+  walkPath(path, 0, headingToStone);
 }
 
 function findPath(from, to) {
@@ -268,7 +293,7 @@ function findPath(from, to) {
   return [];
 }
 
-function walkPath(path, idx) {
+async function walkPath(path, idx, headingToStone = false) {
   if (idx >= path.length) {
     Game.busy = false;
     console.log('[Bantso:forest] Walk complete');
@@ -281,11 +306,32 @@ function walkPath(path, idx) {
   bounceChild();
   Game.audio.play('click');
 
+  const stone = stoneTiles.find(tile => tile.row === step.row && tile.col === step.col);
+  if (stone) {
+    const count = Game.stones[stone.type] || 0;
+    Game.stones[stone.type] = count + 1;
+    const pickup = $('#stone-pickup');
+    try {
+      await saveGame();
+      stoneTiles = stoneTiles.filter(tile => tile !== stone);
+      pickup.textContent = `${STONES[stone.type].icon} Found a ${STONES[stone.type].name}!`;
+      Game.audio.play('levelUp');
+    } catch (error) {
+      Game.stones[stone.type] = count;
+      pickup.textContent = 'Could not save the stone. Try again.';
+      console.error(error);
+    }
+    pickup.hidden = false;
+    clearTimeout(pickupTimer);
+    pickupTimer = setTimeout(() => { pickup.hidden = true; }, 2400);
+    renderIsometricGrid();
+  }
+
   // Check for encounter on this step
   const hint = hintTiles.find(h => h.row === step.row && h.col === step.col);
   const isHint = !!hint;
   const encounterChance = isHint ? 0.95 : 0.10;
-  const encounter = Math.random() < encounterChance;
+  const encounter = !headingToStone && !stone && !Game.isMaxLevel && Math.random() < encounterChance;
 
   console.log('[Bantso:forest] Step', idx + 1, '| pos:', step.row, step.col, '| hint:', isHint ? hint.speciesId : 'none', '| encounter:', encounter ? (isHint ? 'hint' : 'AMBUSH!') : 'no');
 
@@ -298,7 +344,7 @@ function walkPath(path, idx) {
     const ambush = !isHint; // random encounters = ambush
     setTimeout(() => startBattle(forcedSpecies, ambush), 150);
   } else {
-    setTimeout(() => walkPath(path, idx + 1), 350);
+    setTimeout(() => walkPath(path, idx + 1, headingToStone), 350);
   }
 }
 

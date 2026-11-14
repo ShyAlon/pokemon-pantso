@@ -27,7 +27,8 @@ const Game = {
   leagueWins: 0,
   leagueBattle: null,
   hardMode: false,
-  pendingEvolutionId: null,
+  pendingEvolution: null,
+  stones: {},
 
   get totalUniqueCaught() {
     return this.caughtSpecies.length;

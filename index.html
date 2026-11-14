@@ -17,21 +17,23 @@
 <div id="game">
   <!-- Progress Bar -->
   <div id="progress-bar">
-    <button id="menu-btn" title="Menu">☰</button>
+    <div class="menu-anchor">
+      <button id="menu-btn" title="Menu" aria-label="Menu" aria-expanded="false" aria-controls="menu-dropdown">☰</button>
+      <div id="menu-dropdown">
+        <button class="menu-item" id="menu-manual">📖 Manual</button>
+        <button class="menu-item" id="menu-restart">🔄 Restart</button>
+        <button class="menu-item danger" id="menu-newgame">🗑️ New Game</button>
+        <button class="menu-item hard-mode" id="menu-hardmode">🔥 Hard Mode</button>
+        <div class="menu-divider"></div>
+        <button class="menu-item" id="menu-close">✕ Close</button>
+      </div>
+    </div>
     <div class="progress-star" id="level-star">1</div>
     <div class="progress-track">
       <div class="progress-fill" id="progress-fill" style="width: 8%"></div>
       <div class="progress-text" id="progress-text">1 / 18 Catch to Unlock!</div>
     </div>
     <div class="progress-flag">🏁</div>
-    <!-- Menu Dropdown -->
-    <div id="menu-dropdown">
-      <button class="menu-item" id="menu-restart">🔄 Restart</button>
-      <button class="menu-item danger" id="menu-newgame">🗑️ New Game</button>
-      <button class="menu-item hard-mode" id="menu-hardmode">🔥 Hard Mode</button>
-      <div class="menu-divider"></div>
-      <button class="menu-item" id="menu-close">✕ Close</button>
-    </div>
   </div>
 
   <!-- Game Area -->
@@ -39,6 +41,7 @@
     <!-- Forest Screen -->
     <div class="screen active" id="forest-screen">
       <div id="iso-grid"></div>
+      <div id="stone-pickup" role="status" hidden></div>
       <div id="child-char">
         <div class="child-head"><div class="child-cap-visor"></div></div>
         <div class="child-backpack"></div>
@@ -134,6 +137,7 @@
           <div class="pokemon-name" id="arena-pkmn-name"></div>
         </div>
       </div>
+      <button id="arena-forest-btn" class="arena-forest-btn">🌲 Back to Forest</button>
       <button id="arena-fight-btn" class="action-btn attack" style="margin:0 auto 16px;max-width:300px;width:calc(100% - 32px);min-height:64px;border-radius:12px;font-size:18px;flex:none;">
         <span class="btn-icon">⚔️</span> FIGHT
       </button>
@@ -162,6 +166,7 @@
       <h2>My Team</h2>
       <button class="team-close" id="team-close">✕</button>
     </div>
+    <div id="stone-inventory" aria-label="Evolution stones"></div>
     <div id="team-mode-message"></div>
     <div class="team-grid" id="team-grid"></div>
   </div>
@@ -192,6 +197,72 @@
   </dialog>
 
   <!-- Confirm Modal -->
+  <dialog id="manual-dialog" aria-labelledby="manual-title">
+    <div class="manual-header">
+      <h2 id="manual-title">Pokémon Bantso Manual</h2>
+      <form method="dialog"><button type="submit" autofocus>Close</button></form>
+    </div>
+    <div class="manual-tabs" role="tablist" aria-label="Manual topics">
+      <button type="button" role="tab" id="manual-tab-explore" aria-controls="manual-explore" aria-selected="true">Explore</button>
+      <button type="button" role="tab" id="manual-tab-battle" aria-controls="manual-battle" aria-selected="false" tabindex="-1">Battle</button>
+      <button type="button" role="tab" id="manual-tab-stones" aria-controls="manual-stones" aria-selected="false" tabindex="-1">Stones</button>
+      <button type="button" role="tab" id="manual-tab-evolve" aria-controls="manual-evolve" aria-selected="false" tabindex="-1">Evolve</button>
+      <button type="button" role="tab" id="manual-tab-league" aria-controls="manual-league" aria-selected="false" tabindex="-1">League &amp; Modes</button>
+    </div>
+    <section class="manual-panel" role="tabpanel" id="manual-explore" aria-labelledby="manual-tab-explore" tabindex="0">
+      <h3>Walk and find Pokémon</h3>
+      <p>Tap a map tile to walk there. Floating type icons point to wild Pokémon. You can also be ambushed along the way, and the wild Pokémon gets the first turn.</p>
+      <h3>Open My Team</h3>
+      <p>Tap the backpack to view your Pokémon, their HP, and your stone inventory. Tap a healthy Pokémon to make it active. Tap the trainer guide icon on a card to see its type matchups.</p>
+      <h3>Level up</h3>
+      <p>Catch or befriend different species. Every two new species raises your level, giving your team more HP and attack power. Collect 18 different species to unlock the League.</p>
+    </section>
+    <section class="manual-panel" role="tabpanel" id="manual-battle" aria-labelledby="manual-tab-battle" tabindex="0" hidden>
+      <h3>Attack</h3>
+      <p>Choose a move and check its type matchup. Water attacks are strong against Fire, for example. Some types resist a move or are immune to it.</p>
+      <h3>Catch or offer food</h3>
+      <p>Weaken a wild Pokémon to improve your catch chance. Keep it above zero HP so you can still catch it. If you want to befriend it with food, try early. The chance drops as you take hits.</p>
+      <h3>Swap or run</h3>
+      <p>Swapping to a teammate uses your turn. Running can fail and give the opponent a free attack. A failed escape can also cost you a teammate.</p>
+    </section>
+    <section class="manual-panel" role="tabpanel" id="manual-stones" aria-labelledby="manual-tab-stones" tabindex="0" hidden>
+      <h3>Tap a stone to collect it</h3>
+      <p>Tap the stone marker and your trainer will walk to it. A pickup message confirms it went into your backpack. The stones change about every 12 seconds. Check again if the one you want hasn't appeared.</p>
+      <dl>
+        <dt>💧 Water Stone</dt><dd>Look for a blue droplet marker on the river tiles in the upper left.</dd>
+        <dt>⚡ Thunder Stone</dt><dd>Look for a yellow lightning marker beneath the thunderclouds.</dd>
+        <dt>🔥 Fire Stone</dt><dd>Look for an orange stone among the small fires in the lower left.</dd>
+        <dt>🍃 Leaf Stone</dt><dd>Look for a green leaf marker on a tile with trees.</dd>
+        <dt>❄️ Ice Stone</dt><dd>Look for a snowflake marker on the iceberg near the bottom of the map.</dd>
+        <dt>🌙 Moon Stone</dt><dd>Look for a crescent moon marker on the gray rocky outcrop on the right side of the map.</dd>
+        <dt>✨ Shiny Stone</dt><dd>Look for a pulsing golden glint. It can appear on any terrain.</dd>
+      </dl>
+    </section>
+    <section class="manual-panel" role="tabpanel" id="manual-evolve" aria-labelledby="manual-tab-evolve" tabindex="0" hidden>
+      <h3>Evolve from My Team</h3>
+      <p>Open your backpack in the forest and tap the evolution you want on a Pokémon's card. If the button is disabled, the note underneath names the stone you need. An evolution uses one of the listed stones. Options with no stone listed can evolve without one.</p>
+      <h3>Eevee's stone evolutions</h3>
+      <ul>
+        <li>Water Stone → Vaporeon</li>
+        <li>Thunder Stone → Jolteon</li>
+        <li>Fire Stone → Flareon</li>
+        <li>Leaf Stone → Leafeon</li>
+        <li>Ice Stone → Glaceon</li>
+      </ul>
+      <h3>More stone evolutions</h3>
+      <p>Pikachu and Magneton use a Thunder Stone. Growlithe uses a Fire Stone, Jigglypuff uses a Moon Stone, and Togetic uses a Shiny Stone.</p>
+      <p>In Hard Mode, you also choose a teammate to release before the evolution goes through.</p>
+    </section>
+    <section class="manual-panel" role="tabpanel" id="manual-league" aria-labelledby="manual-tab-league" tabindex="0" hidden>
+      <h3>Challenge the League</h3>
+      <p>Reach level 10 with 18 different species to unlock the League. Tap Fight to battle a Champion. League opponents get stronger as you win, and you can't catch them. Use Back to Forest to keep collecting stones after unlocking the League.</p>
+      <h3>Hard Mode</h3>
+      <p>Your team holds up to seven Pokémon. New teammates need two fights to settle in. After a Pokémon fights twice, it must rest for one fight. Evolving also requires releasing a teammate.</p>
+      <h3>Starting over</h3>
+      <p>Restart resets your progress and keeps your starter. New Game starts a fresh game. Choosing Hard Mode starts a fresh game with Hard Mode rules.</p>
+    </section>
+  </dialog>
+
   <div id="confirm-modal" style="position:absolute;inset:0;z-index:500;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:30px">
     <div style="background:#2a2a2a;border:2px solid #555;border-radius:16px;padding:24px;max-width:340px;text-align:center">
       <div style="font-size:48px;margin-bottom:12px">⚠️</div>

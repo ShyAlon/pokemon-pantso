@@ -439,9 +439,10 @@ function addPokemonToCollection(enemy) {
     console.log('[Bantso:battle] New species caught:', enemy.speciesId, '| total unique:', Game.caughtSpecies.length);
   }
   Game.caughtCount++;
-  const count = Game.collection.filter(p => p.speciesId === enemy.speciesId).length;
+  let nextNumber = 1;
+  while (Game.collection.some(p => p.id === `${enemy.speciesId}_${nextNumber}`)) nextNumber++;
   const newPkmn = {
-    id: enemy.speciesId + '_' + (count + 1),
+    id: `${enemy.speciesId}_${nextNumber}`,
     speciesId: enemy.speciesId,
     baseSpeciesId: enemy.speciesId,
     name: enemy.name,
