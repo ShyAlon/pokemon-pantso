@@ -41,6 +41,10 @@
     <!-- Forest Screen -->
     <div class="screen active" id="forest-screen">
       <div id="iso-grid"></div>
+      <div id="map-legend" aria-label="Map legend">
+        <span><span class="pokeball-symbol" aria-hidden="true"></span>Wild Pokémon</span>
+        <span><span class="gem-symbol" aria-hidden="true"></span>Stone</span>
+      </div>
       <div id="stone-pickup" role="status" hidden></div>
       <div id="child-char">
         <div class="child-head"><div class="child-cap-visor"></div></div>
@@ -211,7 +215,7 @@
     </div>
     <section class="manual-panel" role="tabpanel" id="manual-explore" aria-labelledby="manual-tab-explore" tabindex="0">
       <h3>Walk and find Pokémon</h3>
-      <p>Tap a map tile to walk there. Floating type icons point to wild Pokémon. You can also be ambushed along the way, and the wild Pokémon gets the first turn.</p>
+      <p>Tap a map tile to walk there. Red and white Poké Ball markers point to wild Pokémon. Faceted gems mark collectible stones. You can also be ambushed along the way, and the wild Pokémon gets the first turn.</p>
       <h3>Open My Team</h3>
       <p>Tap the backpack to view your Pokémon, their HP, and your stone inventory. Tap a healthy Pokémon to make it active. Tap the trainer guide icon on a card to see its type matchups.</p>
       <h3>Level up</h3>
@@ -227,15 +231,15 @@
     </section>
     <section class="manual-panel" role="tabpanel" id="manual-stones" aria-labelledby="manual-tab-stones" tabindex="0" hidden>
       <h3>Tap a stone to collect it</h3>
-      <p>Tap the stone marker and your trainer will walk to it. A pickup message confirms it went into your backpack. The stones change about every 12 seconds. Check again if the one you want hasn't appeared.</p>
+      <p>Tap the stone marker and your trainer will walk to it. A pickup message confirms it went into your backpack. One stone appears at a time and changes about every 12 seconds. Every type appears once per rotation.</p>
       <dl>
-        <dt>💧 Water Stone</dt><dd>Look for a blue droplet marker on the river tiles in the upper left.</dd>
-        <dt>⚡ Thunder Stone</dt><dd>Look for a yellow lightning marker beneath the thunderclouds.</dd>
+        <dt>💧 Water Stone</dt><dd>Look for a blue droplet marker along the river that crosses the map.</dd>
+        <dt>⚡ Thunder Stone</dt><dd>Look for a yellow lightning marker on a tile beneath the thundercloud, including forest tiles.</dd>
         <dt>🔥 Fire Stone</dt><dd>Look for an orange stone among the small fires in the lower left.</dd>
         <dt>🍃 Leaf Stone</dt><dd>Look for a green leaf marker on a tile with trees.</dd>
-        <dt>❄️ Ice Stone</dt><dd>Look for a snowflake marker on the iceberg near the bottom of the map.</dd>
+        <dt>❄️ Ice Stone</dt><dd>Look for a snowflake marker on the glacier near the bottom of the map.</dd>
         <dt>🌙 Moon Stone</dt><dd>Look for a crescent moon marker on the gray rocky outcrop on the right side of the map.</dd>
-        <dt>✨ Shiny Stone</dt><dd>Look for a pulsing golden glint. It can appear on any terrain.</dd>
+        <dt>✨ Shiny Stone</dt><dd>Look for a pale gem with a pulsing glint. It can appear on any terrain.</dd>
       </dl>
     </section>
     <section class="manual-panel" role="tabpanel" id="manual-evolve" aria-labelledby="manual-tab-evolve" tabindex="0" hidden>
@@ -257,7 +261,7 @@
       <h3>Challenge the League</h3>
       <p>Reach level 10 with 18 different species to unlock the League. Tap Fight to battle a Champion. League opponents get stronger as you win, and you can't catch them. Use Back to Forest to keep collecting stones after unlocking the League.</p>
       <h3>Hard Mode</h3>
-      <p>Your team holds up to seven Pokémon. New teammates need two fights to settle in. After a Pokémon fights twice, it must rest for one fight. Evolving also requires releasing a teammate.</p>
+      <p>Your team holds up to seven Pokémon. New teammates need two fights to settle in. After a teammate fights twice, it must rest for one fight. Your original Pikachu stays ready between fights, even after evolving into Raichu. Evolving also requires releasing another teammate, and your starter stays with you.</p>
       <h3>Starting over</h3>
       <p>Restart resets your progress and keeps your starter. New Game starts a fresh game. Choosing Hard Mode starts a fresh game with Hard Mode rules.</p>
     </section>

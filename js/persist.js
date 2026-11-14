@@ -80,7 +80,7 @@ async function loadGame() {
   } else {
     console.log('[Bantso:persist] No collection found — creating starter Pikachu');
     const starter = {
-      id: 'pikachu_01',
+      id: STARTER_POKEMON_ID,
       speciesId: 'pikachu',
       baseSpeciesId: 'pikachu',
       name: 'Pikachu',

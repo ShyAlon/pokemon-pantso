@@ -213,9 +213,19 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await expect(pikachuCard.locator('.evolve-btn')).toBeDisabled();
     await expect(pikachuCard.locator('.missing-stone')).toHaveText('Needs a Thunder Stone');
 
+    const blocked = page.waitForEvent('console', {
+      predicate: message => message.text().includes('[Bantso:evolution] Blocked'),
+    });
+    await page.evaluate(() => evolvePokemon(Game.activePokemonId, 'thunder'));
+    expect(await (await blocked).args()[1].jsonValue()).toMatchObject({
+      from: 'pikachu', to: 'raichu', stoneType: 'thunder', countBefore: 0,
+      reason: 'Required stone is missing or its count is invalid',
+    });
+    await expect(pikachuCard).toBeVisible();
+
     await page.locator('#team-close').click();
     await page.evaluate(() => {
-      const [row, col] = LANDMARKS.storm.tiles[0];
+      const [row, col] = STORM_TILES[0];
       stoneTiles = [{ row, col, type: 'thunder' }];
       renderIsometricGrid();
     });
@@ -225,7 +235,11 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await page.locator('#team-access-btn').click();
     await expect(page.locator('#stone-inventory')).toContainText('Thunder Stone ×1');
     await pikachuCard.locator('.evolve-btn').click();
-    await expect(page.locator('#stone-inventory')).toContainText('Thunder Stone ×0');
+    const spentLabel = page.locator('#stone-inventory .stone-spent');
+    await expect(spentLabel).toHaveAttribute('data-stone-type', 'thunder');
+    await expect(spentLabel).toHaveCSS('animation-duration', '2s');
+    await expect(spentLabel.locator('.stone-count')).toHaveAttribute('data-previous-count', '×1');
+    await expect(spentLabel.locator('.stone-count')).toHaveText('×0');
 
     const evolvedCard = page.locator('.team-card').filter({ hasText: 'Raichu' });
     await expect(evolvedCard).toBeVisible();
@@ -544,7 +558,7 @@ test.describe('Pokémon Bantso — End-to-End', () => {
       cooldownAfterCatchFight: 2,
       cooldownAfterOne: 1,
       cooldownAfterTwo: 0,
-      starterMustRest: true,
+      starterMustRest: false,
       starterReadyAfterRest: true,
     });
 
@@ -553,7 +567,7 @@ test.describe('Pokémon Bantso — End-to-End', () => {
       openTeamOverlay('battle');
     });
     await expect(page.locator('.team-card').filter({ hasText: 'Pikachu' }))
-      .toContainText('Fatigued after two fights — must rest for one fight.');
+      .not.toContainText('Fatigued after two fights — must rest for one fight.');
     await expect(page.locator('.team-card').filter({ hasText: 'Charmander' }))
       .not.toContainText('Still adjusting');
     await page.evaluate(() => {
@@ -578,6 +592,33 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await page.locator('.release-btn').click();
     await expect(page.locator('.team-card')).toHaveCount(1);
     await expect(page.locator('.team-card')).toContainText('Raichu');
+    expect(await page.evaluate(() => {
+      const starter = Game.getActivePokemon();
+      for (let i = 0; i < 3; i++) completeHardModeFight({ participants: [starter.id] });
+      return Game.canPokemonFight(starter);
+    })).toBe(true);
+  });
+
+  test('continues to the clicked tile if an encounter cannot start', async ({ page }) => {
+    await page.goto('/');
+    await waitForGameReady(page);
+    const messages = [];
+    page.on('console', msg => messages.push(msg.text()));
+    await page.evaluate(async () => {
+      await doNewGame(true);
+      // Reproduce a legacy roster that lost its starter before it was protected.
+      addPokemonToCollection({ speciesId: 'eevee', name: 'Eevee' });
+      Game.collection.shift();
+      Game.activePokemonId = Game.collection[0].id;
+      hintTiles = [];
+      stoneTiles = [];
+      renderIsometricGrid();
+      Math.random = () => 0;
+    });
+    await page.locator('.iso-tile[data-row="5"][data-col="8"]').click();
+    await expect.poll(() => page.evaluate(() => ({ playerPos, busy: Game.busy, screen: Game.screen })))
+      .toEqual({ playerPos: { row: 5, col: 8 }, busy: false, screen: 'forest' });
+    expect(messages.some(message => message.includes('Encounter declined; continuing route'))).toBe(true);
   });
 
   // ── 7. Menu Dropdown ──
@@ -634,20 +675,35 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await expect(menuButton).toBeFocused();
   });
 
-  test('spawns every stone in two refreshes and collects Moon Stones after unlocking the League', async ({ page }) => {
+  test('spawns one stone at a time through a full rotation and collects Moon Stones after unlocking the League', async ({ page }) => {
     await page.goto('/');
     await waitForGameReady(page);
 
-    const types = await page.evaluate(() => {
+    const map = await page.evaluate(() => {
       unspawnedStoneTypes = [];
-      spawnHints();
-      const first = stoneTiles;
-      spawnHints();
-      return [...first, ...stoneTiles].map(({ type, row, col }) => {
-        return !STONES[type].terrain || gridTerrain[row][col] === STONES[type].terrain ? type : null;
-      }).sort();
+      const types = [];
+      for (const _ of Object.keys(STONES)) {
+        spawnHints();
+        if (stoneTiles.length !== 1) throw new Error('Expected one stone');
+        const { type, row, col } = stoneTiles[0];
+        types.push(canSpawnStone(type, row, col) ? type : null);
+      }
+      return {
+        types: types.sort(),
+        stormOverTrees: STORM_TILES.some(([row, col]) => gridTerrain[row][col] === 'trees'),
+        riverSpansMap: RIVER_TILES[0][1] === 0 && RIVER_TILES.at(-1)[1] === GRID_SIZE - 1,
+        riverConnected: RIVER_TILES.slice(1).every(([row, col], index) => {
+          const [previousRow, previousCol] = RIVER_TILES[index];
+          return Math.abs(row - previousRow) + Math.abs(col - previousCol) === 1;
+        }),
+      };
     });
-    expect(types).toEqual(['fire', 'ice', 'leaf', 'moon', 'shiny', 'thunder', 'water']);
+    expect(map).toEqual({
+      types: ['fire', 'ice', 'leaf', 'moon', 'shiny', 'thunder', 'water'],
+      stormOverTrees: true,
+      riverSpansMap: true,
+      riverConnected: true,
+    });
 
     await page.evaluate(() => {
       Game.leagueUnlocked = true;
@@ -657,7 +713,8 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     });
     await page.getByRole('button', { name: /Back to Forest/ }).click();
     await page.evaluate(() => {
-      for (let i = 0; i < 2 && !stoneTiles.some(tile => tile.type === 'moon'); i++) spawnHints();
+      unspawnedStoneTypes = ['moon'];
+      spawnHints();
       renderIsometricGrid();
     });
     await page.getByRole('button', { name: 'Collect Moon Stone' }).click();
@@ -707,18 +764,18 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     const hintLog = logs.find(l => l.includes('[Bantso:forest] Hints spawned'));
     expect(hintLog).toBeDefined();
 
-    // Hint tiles should have the 'hint' class or leaves
-    const leaves = page.locator('.hint-leaves');
-    const count = await leaves.count();
-    expect(count).toBeGreaterThan(0);
+    await expect(page.getByRole('button', { name: 'Wild Pokémon hint' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Collect .* Stone$/ })).toBeVisible();
+    await expect(page.locator('#map-legend')).toContainText('Wild Pokémon');
+    await expect(page.locator('#map-legend')).toContainText('Stone');
     const spawns = await page.evaluate(() => ({
       count: stoneTiles.length,
       valid: stoneTiles.every(({ row, col, type }) =>
-        (type === 'shiny' || gridTerrain[row][col] === STONES[type].terrain) &&
+        canSpawnStone(type, row, col) &&
         !hintTiles.some(hint => hint.row === row && hint.col === col)
       ),
     }));
-    expect([3, 4]).toContain(spawns.count);
+    expect(spawns.count).toBe(1);
     expect(spawns.valid).toBe(true);
   });
 

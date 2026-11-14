@@ -102,7 +102,7 @@ function setupEventHandlers() {
     showConfirm('New Game?', 'Everything will be deleted!', doNewGame);
   });
   $('#menu-hardmode').addEventListener('click', () => {
-    showConfirm('Start Hard Mode?', 'Start over with a 7-Pokémon limit. New teammates need two fights to adjust, fighters become fatigued after two fights and must rest for one, and every evolution requires releasing another Pokémon.', () => doNewGame(true));
+    showConfirm('Start Hard Mode?', 'Start over with a 7-Pokémon limit. New teammates need two fights to adjust, teammates rest after two fights, your starter stays ready, and every evolution requires releasing another Pokémon.', () => doNewGame(true));
   });
 
   // League screen buttons

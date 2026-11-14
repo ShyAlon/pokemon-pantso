@@ -37,15 +37,6 @@ const TYPE_CHART = {
   Fairy:    { Fire:0.5, Fighting:2, Poison:0.5, Dragon:2, Dark:2, Steel:0.5 },
 };
 
-// Hint emoji per type for the forest grid
-const TYPE_HINT_EMOJI = {
-  Normal:'🌟', Fire:'🔥', Water:'💧', Electric:'⚡',
-  Grass:'🍃', Ice:'❄️', Fighting:'💥', Poison:'🟣',
-  Ground:'💨', Flying:'🪶', Psychic:'🔮', Bug:'🐛',
-  Rock:'🪨', Ghost:'👻', Dragon:'🐉', Dark:'🌑',
-  Steel:'✨', Fairy:'💫',
-};
-
 const ATTACK_MOVES = {
   Normal:   { name:'Tackle',        icon:'💥', motion:'impact', tones:[150, 85], noise:0.09 },
   Fire:     { name:'Ember',         icon:'🔥', motion:'rise',   tones:[240, 120], noise:0.36 },
@@ -207,7 +198,8 @@ function getEvolution(speciesId, stoneType) {
   const options = EVOLUTION_MAP[speciesId];
   if (!options) return null;
   const types = Object.keys(options);
-  const evolvedId = options[stoneType ?? (types.length === 1 ? types[0] : '')];
+  const type = stoneType ?? (types.length === 1 ? types[0] : '');
+  const evolvedId = Object.hasOwn(options, type) ? options[type] : null;
   return evolvedId ? getSpecies(evolvedId) : null;
 }
 

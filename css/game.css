@@ -297,53 +297,107 @@ body {
 .iso-tile.bush    { background: #639d36; }
 .iso-tile.trees   { background: #477f2d; }
 .iso-tile.river   { background: repeating-linear-gradient(165deg, #328ac5 0 8px, #50b1dc 9px 11px); }
-.iso-tile.storm   { background: #5c6585; }
 .iso-tile.fire    { background: #a6693d; }
 .iso-tile.rocks   { background: #858274; }
 .iso-tile.iceberg { background: linear-gradient(145deg, #f4fcff, #84cfe9); }
 .iso-tile.hint    { filter: brightness(1.18); }
 .iso-tile:hover   { filter: brightness(1.3); }
 
-.terrain-marker, .hint-leaves {
+.terrain-marker {
   position: absolute;
   transform: translate(-50%, -72%);
   pointer-events: none;
   font-size: clamp(12px, calc(var(--tile-height) * 0.72), 32px);
 }
-.hint-leaves {
-  margin-top: -10px;
-  animation: leafFloat 0.5s ease infinite alternate;
+.storm-marker {
+  position: absolute;
+  z-index: 50;
+  transform: translate(-50%, -130%);
+  pointer-events: none;
+  font-size: clamp(28px, calc(var(--tile-height) * 1.45), 64px);
+  filter: drop-shadow(0 3px 4px #31455e99);
 }
-@keyframes leafFloat {
-  from { transform: translate(-50%, -70%); }
-  to   { transform: translate(-50%, -95%); }
+.glacier-marker {
+  position: absolute;
+  width: calc(var(--tile-width) * 0.8);
+  height: calc(var(--tile-height) * 0.9);
+  transform: translate(-50%, -80%);
+  clip-path: polygon(0 74%, 23% 22%, 44% 26%, 57% 0, 75% 32%, 100% 65%, 55% 100%);
+  background: linear-gradient(135deg, #f7ffff 25%, #b3e7f5 44%, #59b6d7 70%, #94daec 85%);
+  pointer-events: none;
 }
-
-.stone-marker {
+.terrain-marker.fire { color: #ffd09b; text-shadow: 0 0 8px #ff5c0a; }
+#map-legend {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 90;
+  display: flex;
+  gap: 12px;
+  padding: 7px 9px;
+  border: 1px solid #ffffff70;
+  border-radius: 9px;
+  background: #152c25ed;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+}
+#map-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+#map-legend .pokeball-symbol, #map-legend .gem-symbol { width: 16px; }
+.pokeball-symbol {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid #151726;
+  border-radius: 50%;
+  background: linear-gradient(#eb3c47 42%, #151726 42% 58%, #fff 58%);
+}
+.pokeball-symbol::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 38%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 2px solid #151726;
+  border-radius: 50%;
+  background: #fff;
+}
+.wild-marker, .stone-marker {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: clamp(26px, var(--tile-height), 46px);
+  width: clamp(28px, var(--tile-height), 46px);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
   padding: 0;
-  border: 2px solid #fff8;
-  border-radius: 34% 46% 34% 46%;
-  background: linear-gradient(140deg, #fff, var(--stone-color) 50%, #33434f);
-  box-shadow: 0 2px 4px #0007;
-  font-size: clamp(14px, calc(var(--tile-height) * 0.56), 23px);
+  border: 0;
+  background: transparent;
+  filter: drop-shadow(0 2px 2px #17202bc9);
   cursor: pointer;
 }
-.stone-marker.shiny {
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
-  font-size: clamp(23px, var(--tile-height), 37px);
-  animation: stoneGlint 0.8s ease-in-out infinite alternate;
+.wild-marker { z-index: 55; }
+.gem-symbol, .stone-marker > span {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  clip-path: polygon(25% 4%, 75% 4%, 99% 34%, 50% 100%, 1% 34%);
+  background: conic-gradient(from 45deg, #fff, var(--stone-color, #83d9ef), #4489ad, var(--stone-color, #83d9ef), #fff);
 }
+.stone-marker > span {
+  padding-bottom: 10%;
+  color: #19223a;
+  font-size: clamp(15px, calc(var(--tile-height) * 0.56), 24px);
+  pointer-events: none;
+}
+.stone-marker.shiny { animation: stoneGlint 0.8s ease-in-out infinite alternate; }
 @keyframes stoneGlint {
-  to { filter: drop-shadow(0 0 8px #fffab0); transform: translate(-50%, -50%) scale(1.16); }
+  to { filter: drop-shadow(0 0 8px #fffab0); }
 }
+
 #stone-pickup {
   position: absolute;
   z-index: 101;
@@ -808,10 +862,44 @@ body {
   color: #fff;
   font-size: 13px;
 }
-#stone-inventory span {
+#stone-inventory .stone-label {
   padding: 5px 8px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.12);
+}
+.stone-count {
+  display: inline-grid;
+  font-variant-numeric: tabular-nums;
+}
+.stone-spent {
+  animation: stone-spent-halo 2s ease-out;
+}
+.stone-spent .stone-count > span,
+.stone-spent .stone-count::before {
+  grid-area: 1 / 1;
+}
+.stone-spent .stone-count::before {
+  content: attr(data-previous-count) / "";
+  animation: stone-count-out 2s ease-in-out both;
+}
+.stone-spent .stone-count > span {
+  animation: stone-count-in 2s ease-in-out both;
+}
+@keyframes stone-spent-halo {
+  0%, 100% { box-shadow: 0 0 0 1px transparent, 0 0 14px transparent; }
+  18%, 60% { box-shadow: 0 0 0 1px #ffe88a, 0 0 14px #ffdc66; }
+}
+@keyframes stone-count-out {
+  0%, 15% { opacity: 1; }
+  70%, 100% { opacity: 0; }
+}
+@keyframes stone-count-in {
+  0%, 15% { opacity: 0; }
+  70%, 100% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stone-spent .stone-count::before { display: none; }
+  .stone-spent .stone-count > span { animation: none; }
 }
 #team-mode-message {
   display: none;

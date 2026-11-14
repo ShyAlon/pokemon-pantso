@@ -4,6 +4,8 @@
 //  js/state.js — Central game state
 // ============================================================
 
+const STARTER_POKEMON_ID = 'pikachu_01';
+
 const HARD_MODE_RULES = Object.freeze({
   maxTeamSize: 7,
   adjustmentFights: 2,
@@ -55,7 +57,7 @@ const Game = {
   },
 
   getPokemonFightStatus(pokemon) {
-    if (!this.hardMode || !pokemon) return null;
+    if (!this.hardMode || !pokemon || pokemon.id === STARTER_POKEMON_ID) return null;
     const cooldown = pokemon.hardCooldown || 0;
     if (cooldown > 0) {
       return {

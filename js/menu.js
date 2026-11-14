@@ -103,7 +103,7 @@ async function doRestart() {
     Game.activePokemonId = starter.id;
   } else {
     const newStarter = {
-      id: 'pikachu_01',
+      id: STARTER_POKEMON_ID,
       speciesId: 'pikachu',
       baseSpeciesId: 'pikachu',
       name: 'Pikachu',
@@ -146,7 +146,7 @@ async function doNewGame(hardMode = false) {
   Game.scrollOffset = 0;
   Game.hardMode = hardMode;
   Game.collection = [{
-    id: 'pikachu_01',
+    id: STARTER_POKEMON_ID,
     speciesId: 'pikachu',
     baseSpeciesId: 'pikachu',
     name: 'Pikachu',
@@ -154,7 +154,7 @@ async function doNewGame(hardMode = false) {
     hardCooldown: 0,
     fightsSinceRest: 0,
   }];
-  Game.activePokemonId = 'pikachu_01';
+  Game.activePokemonId = STARTER_POKEMON_ID;
 
   healAllPokemon();
   await saveGame();

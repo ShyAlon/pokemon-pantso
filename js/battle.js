@@ -19,10 +19,15 @@ function getWildPokemonSpecies() {
 function prepareHardModeActivePokemon() {
   if (!Game.hardMode) return true;
   const active = Game.getActivePokemon();
-  if (active && Game.canPokemonFight(active)) return true;
+  if (active?.currentHp > 0 && Game.canPokemonFight(active)) return true;
   const replacement = Game.getBattleReadyPokemon()[0];
   if (!replacement) {
-    console.log('[Bantso:hard] No Pokémon is ready to fight');
+    console.info('[Bantso:hard] No Pokémon is ready to fight', Game.collection.map(pokemon => ({
+      id: pokemon.id,
+      hp: pokemon.currentHp,
+      active: pokemon.id === Game.activePokemonId,
+      status: Game.getPokemonFightStatus(pokemon)?.message,
+    })));
     Game.busy = false;
     return false;
   }
@@ -73,10 +78,16 @@ function createEnemyPokemon(species) {
 }
 
 function startBattle(forcedSpeciesId, ambush) {
-  if (!prepareHardModeActivePokemon()) return;
+  if (!prepareHardModeActivePokemon()) {
+    console.debug('[Bantso:battle] Encounter declined', { reason: 'No battle-ready Pokémon', forcedSpeciesId, ambush });
+    return false;
+  }
   const species = forcedSpeciesId ? getSpecies(forcedSpeciesId) : getWildPokemonSpecies();
   const enemy = createEnemyPokemon(species);
-  if (!enemy) return;
+  if (!enemy) {
+    console.warn('[Bantso:battle] Encounter declined', { reason: 'Could not create enemy', species: species.id });
+    return false;
+  }
 
   console.log('[Bantso:battle] Starting battle with', enemy.name, ambush ? '(AMBUSH!)' : '');
   Game.battle = { enemy: enemy, turn: ambush ? 'enemy' : 'player', attacksReceived: 0, participants: [Game.activePokemonId] };
@@ -122,6 +133,7 @@ function startBattle(forcedSpeciesId, ambush) {
       setTimeout(() => enemyTurn(), 600);
     }, 600);
   }
+  return true;
 }
 
 function renderBattle() {

@@ -19,13 +19,19 @@ function closeTeamOverlay() {
   Game.teamContext = null;
 }
 
-function renderTeamGrid() {
+function renderTeamGrid(spentStone = null) {
   const grid = $('#team-grid');
   if (!grid) return;
 
-  $('#stone-inventory').innerHTML = Object.entries(STONES).map(([type, { icon, name }]) =>
-    `<span>${icon} ${name} <strong>×${Game.stones[type] || 0}</strong></span>`
-  ).join('');
+  const inventory = $('#stone-inventory');
+  inventory.innerHTML = Object.entries(STONES).map(([type, { icon, name }]) => {
+    const count = Game.stones[type] || 0;
+    const spent = type === spentStone;
+    return `<span class="stone-label${spent ? ' stone-spent' : ''}" data-stone-type="${type}">
+      ${icon} ${name} <strong class="stone-count"${spent ? ` data-previous-count="×${count + 1}"` : ''}><span>×${count}</span></strong>
+    </span>`;
+  }).join('');
+  inventory.querySelector('.stone-spent')?.scrollIntoView({ block: 'nearest' });
 
   if (Game.collection.length === 0) {
     grid.innerHTML = '<div class="team-empty">No Pokémon yet!</div>';
@@ -50,7 +56,7 @@ function renderTeamGrid() {
     const isActive = p.id === Game.activePokemonId;
     const evolutions = EVOLUTION_MAP[p.speciesId] || {};
     const isPendingEvolution = Game.pendingEvolution?.pokemonId === p.id;
-    const canRelease = Game.pendingEvolution && !isPendingEvolution;
+    const canRelease = Game.pendingEvolution && !isPendingEvolution && p.id !== STARTER_POKEMON_ID;
     const fightStatus = Game.getPokemonFightStatus(p);
     const cardClass = isActive ? 'team-card active-pokemon' : 'team-card';
     html += `
@@ -69,12 +75,12 @@ function renderTeamGrid() {
         ${renderFightStatus(fightStatus)}
         ${Game.teamContext !== 'battle' && !Game.pendingEvolution ? Object.entries(evolutions).map(([type, target]) => {
           const stone = STONES[type];
-          const missing = stone && !(Game.stones[type] > 0);
+          const missing = stone && !canUseEvolutionStone(type);
           const noteId = `stone-needed-${p.id}-${type}`;
           return `<div class="evolution-option">
             <button class="evolve-btn" aria-label="Evolve into ${getSpecies(target).name}" onclick="event.stopPropagation();requestEvolution('${p.id}', '${type}')"
               ${missing ? `disabled aria-describedby="${noteId}"` : ''}>
-              ${getSpecies(target).name}${stone ? ` <small>${stone.icon} ${stone.name}</small>` : ''}
+              ${getSpecies(target).name}${stone ? ` <small>${stone.icon} ${stone.name}</small>` : ' <small>No stone needed</small>'}
             </button>
             ${missing ? `<small class="missing-stone" id="${noteId}">Needs a ${stone.name}</small>` : ''}
           </div>`;
@@ -104,21 +110,51 @@ function renderFightStatus(status) {
 }
 
 function canUseEvolutionStone(stoneType) {
-  return stoneType === 'none' || Game.stones[stoneType] > 0;
+  const count = Game.stones[stoneType];
+  return stoneType === 'none' || (Object.hasOwn(STONES, stoneType) && Number.isInteger(count) && count > 0);
+}
+
+function checkEvolution(pokemonId, requestedStone, phase) {
+  const pokemon = Game.collection.find(candidate => candidate.id === pokemonId);
+  const options = Object.keys(EVOLUTION_MAP[pokemon?.speciesId] || {});
+  const stoneType = requestedStone ?? (options.length === 1 ? options[0] : null);
+  const evolution = stoneType ? getEvolution(pokemon?.speciesId, stoneType) : null;
+  const countBefore = stoneType && stoneType !== 'none' ? Game.stones[stoneType] ?? 0 : null;
+  const details = {
+    phase, pokemonId, from: pokemon?.speciesId, to: evolution?.id, stoneType,
+    countBefore, hardMode: Game.hardMode,
+  };
+
+  let reason;
+  if (Game.busy) reason = 'Game is busy';
+  else if (Game.teamContext === 'battle') reason = 'Evolution is unavailable during battle';
+  else if (!pokemon) reason = 'Pokémon is missing';
+  else if (!evolution) reason = 'No evolution for the selected stone';
+  else if (!canUseEvolutionStone(stoneType)) reason = 'Required stone is missing or its count is invalid';
+  if (reason) {
+    console.warn('[Bantso:evolution] Blocked', { ...details, reason });
+    return null;
+  }
+  console.info('[Bantso:evolution] Validated', details);
+  return { pokemon, stoneType, evolution, details };
 }
 
 function requestEvolution(pokemonId, stoneType) {
-  if (Game.busy || Game.teamContext === 'battle' || Game.pendingEvolution) return;
-  const pokemon = Game.collection.find(candidate => candidate.id === pokemonId);
-  if (!pokemon || !getEvolution(pokemon.speciesId, stoneType) || !canUseEvolutionStone(stoneType)) return;
+  if (Game.pendingEvolution) {
+    console.warn('[Bantso:evolution] Blocked', { pokemonId, stoneType, reason: 'Another evolution is pending' });
+    return;
+  }
   if (!Game.hardMode) return evolvePokemon(pokemonId, stoneType);
-  if (Game.collection.length < 2) {
+  const attempt = checkEvolution(pokemonId, stoneType, 'request');
+  if (!attempt) return;
+  if (!Game.collection.some(p => p.id !== pokemonId && p.id !== STARTER_POKEMON_ID)) {
     const message = $('#team-mode-message');
     message.textContent = 'Catch another Pokémon before evolving.';
     message.classList.add('show');
+    console.warn('[Bantso:evolution] Blocked', { ...attempt.details, reason: 'No teammate can be released' });
     return;
   }
-  Game.pendingEvolution = { pokemonId, stoneType };
+  Game.pendingEvolution = { pokemonId, stoneType: attempt.stoneType };
   renderTeamGrid();
 }
 
@@ -127,14 +163,14 @@ function releaseForEvolution(releaseId) {
   if (pending) return evolvePokemon(pending.pokemonId, pending.stoneType, releaseId);
 }
 
-async function evolvePokemon(pokemonId, stoneType, releaseId = null) {
-  if (Game.busy || Game.teamContext === 'battle') return;
-  const pokemon = Game.collection.find(candidate => candidate.id === pokemonId);
-  if (!pokemon) return;
-  const evolution = getEvolution(pokemon.speciesId, stoneType);
-  stoneType ??= Object.keys(EVOLUTION_MAP[pokemon.speciesId] || {})[0];
-  if (!evolution || !canUseEvolutionStone(stoneType)) return;
-  if (Game.hardMode && (releaseId === pokemonId || !Game.collection.some(p => p.id === releaseId))) return;
+async function evolvePokemon(pokemonId, requestedStone, releaseId = null) {
+  const attempt = checkEvolution(pokemonId, requestedStone, 'apply');
+  if (!attempt) return;
+  const { pokemon, stoneType, evolution, details } = attempt;
+  if (Game.hardMode && (releaseId === pokemonId || releaseId === STARTER_POKEMON_ID || !Game.collection.some(p => p.id === releaseId))) {
+    console.warn('[Bantso:evolution] Blocked', { ...details, releaseId, reason: 'Invalid teammate release' });
+    return;
+  }
 
   Game.busy = true;
   const original = { ...pokemon };
@@ -170,7 +206,7 @@ async function evolvePokemon(pokemonId, stoneType, releaseId = null) {
     const message = $('#team-mode-message');
     message.textContent = 'Could not save the evolution. Try again.';
     message.classList.add('show');
-    console.error(error);
+    console.error('[Bantso:evolution] Save failed, evolution rolled back', { ...details, error });
     return;
   } finally {
     Game.busy = false;
@@ -180,7 +216,10 @@ async function evolvePokemon(pokemonId, stoneType, releaseId = null) {
   Game.audio.play('levelUp');
   spawnConfetti(35);
   if (Game.hardMode) updateProgressBar();
-  renderTeamGrid();
+  console.info('[Bantso:evolution] Saved', {
+    ...details, countAfter: details.countBefore === null ? null : Game.stones[stoneType],
+  });
+  renderTeamGrid(STONES[stoneType] ? stoneType : null);
 }
 
 function selectTeamPokemon(pokemonId) {
