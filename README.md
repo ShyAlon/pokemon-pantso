@@ -482,3 +482,11 @@ use a southern sky with Crux (the Southern Cross) and Triangulum Australe
 latitude. The field guide names each sky’s patterns. Stars and faint connecting
 lines remain stationary; shapes are stylized rather than a seasonal sky chart.
 Patterns are based on the [IAU constellation charts](https://iauarchive.eso.org/public/themes/constellations/).
+
+The night sky now contains six compact constellation patterns per hemisphere:
+Big Dipper, Cassiopeia, Cygnus, Lyra, Cepheus, and Corona Borealis in the north;
+Crux, Triangulum Australe, Scorpius, Vela, Carina, and Pavo in the south.
+A faint, stationary Milky Way and 180 dim background stars add depth. Stars use
+blue-white, cream, and warm orange tints; a minority gently vary in brightness
+with staggered timing. Reduced-motion settings disable twinkling. All star
+positions remain fixed and all night layers fade out in daylight.

@@ -1347,15 +1347,21 @@ body {
 #world-sky { position: absolute; inset: 0 0 auto; height: 46%; pointer-events: none; overflow: hidden; }
 #night-sky { position: absolute; inset: 0; opacity: var(--stars-opacity, 0); }
 #night-stars { position: absolute; inset: 0; }
-.sky-constellation { position: absolute; overflow: visible; }
-.sky-constellation.left { left: 4%; top: 32%; width: 49%; height: 60%; }
-.sky-constellation.right { right: 5%; top: 55%; width: 38%; height: 39%; }
-.sky-star { fill: #f0f5ff; filter: drop-shadow(0 0 2px #d6e6ffa0); }
-.constellation-lines { fill: none; stroke: #cfddff; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: round; stroke-linejoin: round; }
+.sky-constellation { position: absolute; width: 28%; height: 30%; overflow: visible; }
+.sky-star { fill: var(--star-color, #f0f5ff); filter: drop-shadow(0 0 2px var(--star-color, #d6e6ff)); }
+.ambient-star { position: absolute; border-radius: 50%; background: var(--star-color); opacity: var(--star-opacity, 0.6); box-shadow: 0 0 3px color-mix(in srgb, var(--star-color), transparent 55%); }
+.twinkle { animation: starTwinkle var(--twinkle-duration, 5s) ease-in-out var(--twinkle-delay, 0s) infinite; }
+@keyframes starTwinkle { 0%, 100% { opacity: var(--star-opacity, 0.9); } 45% { opacity: 0.3; } 70% { opacity: var(--star-opacity, 0.9); } }
+#forest-screen[data-time-of-day="day"] .twinkle { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .twinkle { animation: none; } }
+.milky-way { position: absolute; left: -16%; top: 24%; width: 132%; height: 38%; transform: rotate(-23deg); border-radius: 50%; opacity: 0.7; background: radial-gradient(ellipse at 32% 50%, #a9c4eb22, transparent 54%), radial-gradient(ellipse at 64% 50%, #d0c2ee30, transparent 58%), radial-gradient(ellipse at 80% 45%, #e1d8f21a, transparent 50%); filter: blur(5px); }
+.milky-way::before { content: ''; position: absolute; inset: 12% 0; border-radius: 50%; background: radial-gradient(ellipse at 45% 43%, #e5e7ff24, transparent 65%), radial-gradient(ellipse at 70% 55%, #d0d9fa20, transparent 55%); }
+.milky-way::after { content: ''; position: absolute; inset: 43% 5% 40%; border-radius: 50%; background: #0b123650; transform: rotate(-2deg); filter: blur(3px); }
+.constellation-lines { fill: none; stroke: #cfddff; stroke-opacity: 0.2; stroke-width: 0.65; stroke-linecap: round; stroke-linejoin: round; }
 .constellation-lines polyline { vector-effect: non-scaling-stroke; }
 .sky-galaxy { position: absolute; width: 42%; height: 28%; border-radius: 50%; background: radial-gradient(ellipse, #fff6eacc 0%, #d7c7f477 9%, #ab8cdb44 26%, #7b8bc322 48%, transparent 72%); }
-.galaxy-one { left: 9%; top: 32%; transform: rotate(-28deg); }
-.galaxy-two { right: 8%; top: 15%; width: 24%; height: 20%; transform: rotate(24deg); background: radial-gradient(ellipse, #e9fbffbb, #82bfe455 15%, #6577c333 35%, transparent 70%); }
+.galaxy-one { left: 9%; top: 32%; opacity: 0.45; transform: rotate(-28deg); }
+.galaxy-two { right: 8%; top: 15%; width: 24%; height: 20%; opacity: 0.45; transform: rotate(24deg); background: radial-gradient(ellipse, #e9fbffbb, #82bfe455 15%, #6577c333 35%, transparent 70%); }
 #sky-body { position: absolute; width: clamp(30px, 5vw, 48px); aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); }
 #sky-body.sun { background: radial-gradient(circle at 38% 35%, #fffbd1, #ffdf73 65%, #ffc44f); box-shadow: 0 0 22px 8px #ffdf7155, 0 0 65px 22px #fff1b522; }
 #sky-body.moon { background: radial-gradient(circle at 30% 35%, #b7c4d4 0 8%, transparent 9%), radial-gradient(circle at 63% 63%, #c5cedc 0 13%, transparent 14%), radial-gradient(circle at 64% 23%, #c5cedc 0 6%, transparent 7%), #eef1e1; box-shadow: 0 0 24px 8px #c6d9ef33; }

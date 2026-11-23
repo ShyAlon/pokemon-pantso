@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pokemon-bantso-v28';
+const CACHE_NAME = 'pokemon-bantso-v29';
 const urlsToCache = [
   './',
   'index.html',

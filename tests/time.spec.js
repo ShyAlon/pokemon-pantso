@@ -46,7 +46,7 @@ test('sun and moon follow arcs while stars and galaxies remain fixed', async ({ 
   const before = await fixed();
   await positionAt(0);
   expect(await fixed()).toEqual(before);
-  expect(before).toHaveLength(4);
+  expect(before).toHaveLength(8);
   expect(await page.locator('#night-sky').evaluate(n => getComputedStyle(n).opacity)).toBe('1');
   await positionAt(360);
   await expect(page.locator('#forest-screen')).toHaveAttribute('data-time-of-day', 'day');
@@ -106,4 +106,26 @@ test('region travel switches hemispheres and the guide names the visible pattern
   await page.evaluate(async () => { await travelToRegion(REGION_EXITS[2]); });
   await expect(page.locator('#night-stars')).toHaveAttribute('data-hemisphere', 'north');
   await page.screenshot({ path: '/tmp/pokemon-northern-constellations.png' });
+});
+
+
+test('rich night skies have six constellations, colored stars and restrained twinkling', async ({ page }) => {
+  await ready(page);
+  await page.evaluate(() => resetGameClock(0));
+  await expect(page.locator('.sky-constellation')).toHaveCount(6);
+  await expect(page.locator('.ambient-star')).toHaveCount(180);
+  const colors = await page.locator('.sky-star').evaluateAll(nodes => [...new Set(nodes.map(n => getComputedStyle(n).fill))]);
+  expect(colors.length).toBeGreaterThanOrEqual(4);
+  expect(await page.locator('.twinkle').first().evaluate(n => getComputedStyle(n).animationName)).toBe('none');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  expect(await page.locator('.twinkle').first().evaluate(n => getComputedStyle(n).animationName)).toBe('starTwinkle');
+  expect(await page.locator('.sky-star:not(.twinkle)').count()).toBeGreaterThan(10);
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.screenshot({ path: '/tmp/pokemon-rich-night-mobile.png' });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.screenshot({ path: '/tmp/pokemon-rich-night-desktop.png' });
+  await page.evaluate(async () => { await travelToRegion(REGION_EXITS[0]); });
+  await expect(page.locator('.sky-constellation')).toHaveCount(6);
+  await expect(page.locator('[data-constellation="scorpius"]')).toHaveCount(1);
+  await page.screenshot({ path: '/tmp/pokemon-rich-south.png' });
 });

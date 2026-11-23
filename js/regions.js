@@ -41,7 +41,7 @@ function showRegionGuide() {
   $('#region-guide-title').textContent = region.name + ' · Field guide';
   $('#region-description').textContent = region.description;
   const sky = CONSTELLATION_SKIES[region.hemisphere];
-  $('#region-constellations').textContent = `${sky.name}: ${sky.patterns.map(pattern => pattern.name).join(' · ')}. These stylized star patterns stay fixed throughout the night.`;
+  $('#region-constellations').textContent = `${sky.name}: ${sky.patterns.map(pattern => pattern.name).join(' · ')}. These smaller, stylized patterns stay fixed against a faint Milky Way, with colored stars and gentle twinkling.`;
   const list = species => species.map(s => `<span class="region-species">${s.emoji} ${s.name}</span>`).join('');
   $('#region-pokemon').innerHTML = list(regionSpecies());
   $('#region-rare').innerHTML = list(regionSpecies(true));
