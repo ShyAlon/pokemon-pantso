@@ -16,6 +16,8 @@ const Game = {
   db: null,
   audio: null,
   screen: 'forest',
+  region: 'Kanto',
+  gameMinutes: 720,
   level: 1,
   caughtCount: 0,
   caughtSpecies: [],

@@ -19,6 +19,8 @@ function saveGame(releasedId = null) {
       activePokemonId: Game.activePokemonId,
       leagueUnlocked: Game.leagueUnlocked,
       hardMode: Game.hardMode,
+      region: Game.region,
+      gameMinutes: getGameMinutes(),
       stones: Game.stones,
     });
     const collection = tx.objectStore('collection');
@@ -39,6 +41,8 @@ async function loadGame() {
 
   console.log('[Bantso:persist] Loaded state:', state ? 'found' : 'none', '| collection:', collection.length, '| leagueState:', leagueState ? 'found' : 'none');
 
+  Game.region = REGIONS.some(region => region.name === state?.region) ? state.region : 'Kanto';
+  resetGameClock(state?.gameMinutes);
   Game.stones = state?.stones ?? {};
   if (state) {
     Game.caughtCount = state.caughtCount || 1;

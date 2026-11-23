@@ -5,12 +5,13 @@
 // ============================================================
 
 function getWildPokemonSpecies() {
-  const uncaughtRegular = SPECIES.filter(s => !Game.caughtSpecies.includes(s.id));
-  const uncaughtLegendary = LEGENDARY_SPECIES.filter(s => !Game.caughtSpecies.includes(s.id));
+  const regular = regionSpecies();
+  const uncaughtRegular = regular.filter(s => !Game.caughtSpecies.includes(s.id));
+  const uncaughtLegendary = regionSpecies(true).filter(s => !Game.caughtSpecies.includes(s.id));
   const legendaryEncounter = uncaughtLegendary.length > 0 && Math.random() < 0.05;
   const pool = legendaryEncounter
     ? uncaughtLegendary
-    : (uncaughtRegular.length > 0 ? uncaughtRegular : SPECIES);
+    : (uncaughtRegular.length > 0 ? uncaughtRegular : regular);
   console.log('[Bantso:battle] getWildPokemonSpecies | regular:', uncaughtRegular.length,
     '| legendary:', uncaughtLegendary.length, '| rare encounter:', legendaryEncounter);
   return pool[Math.floor(Math.random() * pool.length)];

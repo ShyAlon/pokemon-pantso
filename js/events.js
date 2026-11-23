@@ -9,6 +9,8 @@ function setupEventHandlers() {
 
   // Forest screen: click on grid handled via inline onclick in forest.js
 
+  $('#region-help').addEventListener('click', showRegionGuide);
+
   // League button
   $('#league-btn').addEventListener('click', () => {
     if (Game.busy) return;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pokemon-bantso-v22';
+const CACHE_NAME = 'pokemon-bantso-v25';
 const urlsToCache = [
   './',
   'index.html',
@@ -12,6 +12,8 @@ const urlsToCache = [
   'js/audio.js',
   'js/species.js',
   'js/state.js',
+  'js/regions.js',
+  'js/time.js',
   'js/persist.js',
   'js/ui.js',
   'js/effects.js',

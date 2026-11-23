@@ -79,6 +79,9 @@ async function doRestart() {
   closeMenu();
   Game.audio.play('click');
   console.log('[Bantso:menu] === RESTARTING GAME ===');
+  Game.region = 'Kanto';
+  resetGameClock();
+  playerPos = { row: 5, col: 5 };
   Game.pendingEvolution = null;
   Game.stones = {};
   Game.caughtCount = 1;
@@ -133,6 +136,9 @@ async function doNewGame(hardMode = false) {
   console.log('[Bantso:menu] === NEW GAME (full wipe) ===');
   await clearAllData();
 
+  Game.region = 'Kanto';
+  resetGameClock();
+  playerPos = { row: 5, col: 5 };
   Game.pendingEvolution = null;
   Game.stones = {};
   Game.caughtCount = 1;

@@ -38,6 +38,7 @@ async function init() {
 
   // Render initial screen
   renderForestScreen();
+  startGameClock();
   updateProgressBar();
 
   if (Game.leagueUnlocked) {
@@ -74,6 +75,7 @@ init().catch(err => {
   Game.audio.init();
   setupEventHandlers();
   renderForestScreen();
+  startGameClock();
   updateProgressBar();
   console.log('[Bantso:app] Fallback init complete (degraded mode)');
 });

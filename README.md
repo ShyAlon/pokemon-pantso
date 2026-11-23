@@ -446,3 +446,37 @@ The Playwright config automatically starts `python3 -m http.server 8080` before 
 - **Visual feedback**: every action has a distinct animation and sound
 - **Kid-friendly**: bright colors, cute character, encouraging messages, no punishing mechanics
 - **Zero dependencies at runtime**: pure HTML/CSS/JS — no frameworks, no CDNs needed after sprite caching
+
+### Regions and travel
+
+Explore Kanto, Johto, Hoenn, Sinnoh, Unova, Kalos, Alola, Galar, and Paldea.
+They form a wrapping 3×3 world in that order, with Kanto at the top left.
+Tap any of the four golden diamond tips or its destination sign to walk there
+and travel. You arrive just inside the opposite tip. Travel paths avoid surprise
+battles; ordinary exploration keeps its existing encounter rules.
+
+Each region has a different sky, ground palette, terrain distribution, and wild
+encounter pool drawn from the existing Bantso roster. The **?** field guide at the
+top right lists the current region’s regular Pokémon, rare encounters, and routes.
+All evolution-stone habitats remain available in every region. The current region
+is saved automatically, older saves begin in Kanto, and restarting returns to Kanto.
+
+### Game time
+
+New games and restarts begin at noon. One real second advances one game minute,
+so a full day lasts 24 real minutes. Day runs from 06:00 to 18:00; a sun crosses
+the sky, followed by a moon at night. Dawn and dusk blend with each region’s
+palette. Stars and galaxies stay fixed in the night sky. The map clock shows
+the current time. Time continues through battles, travel and background tabs;
+it is saved with progress and every 15 seconds, and resumes from the saved time
+when the game reopens (time while the game is closed does not advance).
+
+### Regional constellations
+
+Kanto, Johto, Sinnoh, Unova, Kalos, and Galar use a northern sky with Cassiopeia
+and the Big Dipper (the familiar asterism in Ursa Major). Hoenn, Alola, and Paldea
+use a southern sky with Crux (the Southern Cross) and Triangulum Australe
+(the Southern Triangle). This is a gameplay assignment, not real-world regional
+latitude. The field guide names each sky’s patterns. Stars and faint connecting
+lines remain stationary; shapes are stylized rather than a seasonal sky chart.
+Patterns are based on the [IAU constellation charts](https://iauarchive.eso.org/public/themes/constellations/).

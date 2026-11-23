@@ -40,7 +40,13 @@
   <div id="game-area">
     <!-- Forest Screen -->
     <div class="screen active" id="forest-screen">
+      <div id="world-sky" aria-hidden="true">
+        <div id="night-sky"><div class="sky-galaxy galaxy-one"></div><div class="sky-galaxy galaxy-two"></div><div id="night-stars"></div></div>
+        <div id="sky-body" class="sun"></div>
+      </div>
+      <div id="game-clock" aria-label="Game time 12:00, day" title="1 real second = 1 game minute · Day 06:00–18:00">☀ 12:00</div>
       <div id="iso-grid"></div>
+      <div id="region-heading"><span id="region-name" role="status">Kanto</span><button id="region-help" aria-label="About this region" title="Region field guide">?</button></div>
       <div id="map-legend" aria-label="Map legend">
         <span><span class="pokeball-symbol" aria-hidden="true"></span>Wild Pokémon</span>
         <span><span class="gem-symbol" aria-hidden="true"></span>Stone</span>
@@ -281,10 +287,23 @@
 </div>
 
 <!-- JS: load order matters — dependencies first -->
+<dialog id="region-guide" aria-labelledby="region-guide-title">
+  <form method="dialog"><button class="region-close" aria-label="Close region guide">×</button></form>
+  <p class="region-eyebrow">EXPLORER’S NOTEBOOK</p>
+  <h2 id="region-guide-title"></h2><p id="region-description"></p>
+  <h3>Wild Pokémon</h3><div id="region-pokemon"></div>
+  <h3>Rare encounters · 5% of surprise encounters</h3><div id="region-rare"></div>
+  <p class="region-note">These habitats feature Pokémon from Bantso’s current roster. Wild hints and surprise encounters use this region’s Pokémon. Stones can be found in every region.</p>
+  <h3>Night sky</h3><p id="region-constellations"></p>
+  <h3>Travel routes</h3><p id="region-routes"></p>
+  <p class="region-note">Tap a glowing tip square or its destination sign to walk there and travel. Routes wrap around the world. Travel paths are free of surprise battles.</p>
+</dialog>
 <script src="js/db.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/species.js"></script>
 <script src="js/state.js"></script>
+<script src="js/regions.js"></script>
+<script src="js/time.js"></script>
 <script src="js/persist.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/effects.js"></script>

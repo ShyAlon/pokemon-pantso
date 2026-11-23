@@ -35,6 +35,7 @@ function renderForestScreen() {
   updateProgressBar();
   clearTimeout(pickupTimer);
   $('#stone-pickup').hidden = true;
+  applyRegionTheme();
   initGrid();
   spawnHints();
   renderIsometricGrid();
@@ -57,6 +58,12 @@ function setupGridDelegation() {
       onTileClick(row, col);
     }
   });
+  gridEl.addEventListener('keydown', event => {
+    if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.region-exit')) {
+      event.preventDefault();
+      onTileClick(Number(event.target.dataset.row), Number(event.target.dataset.col));
+    }
+  });
   window.addEventListener('resize', () => {
     if (Game.screen === 'forest') renderIsometricGrid();
   });
@@ -66,19 +73,11 @@ function setupGridDelegation() {
 
 function initGrid() {
   gridTerrain = [];
-  const terrains = ['grass', 'grass', 'grass', 'bush', 'trees'];
+  const terrains = currentRegion().terrain;
   for (let r = 0; r < GRID_SIZE; r++) {
     gridTerrain[r] = [];
     for (let c = 0; c < GRID_SIZE; c++) {
-      // Weighted random terrain, more grass near center (center is 5,5)
-      const distFromCenter = Math.abs(r - 5) + Math.abs(c - 5);
-      if (distFromCenter <= 2) {
-        gridTerrain[r][c] = terrains[Math.floor(Math.random() * 3)]; // mostly grass
-      } else if (distFromCenter <= 5) {
-        gridTerrain[r][c] = terrains[Math.floor(Math.random() * 4)]; // grass/bush
-      } else {
-        gridTerrain[r][c] = terrains[2 + Math.floor(Math.random() * 3)]; // bush/trees
-      }
+      gridTerrain[r][c] = terrains[Math.floor(Math.random() * terrains.length)];
     }
   }
   for (const [terrain, landmark] of Object.entries(LANDMARKS)) {
@@ -89,6 +88,7 @@ function initGrid() {
   gridTerrain[5][5] = 'grass';
   gridTerrain[7][1] = 'trees';
   gridTerrain[8][1] = 'trees';
+  for (const exit of REGION_EXITS) gridTerrain[exit.row][exit.col] = 'grass';
   console.debug('[Bantso:forest] Terrain initialized', {
     size: GRID_SIZE, riverTiles: RIVER_TILES.length, stormTiles: STORM_TILES, player: playerPos,
   });
@@ -104,7 +104,7 @@ function tileToScreen(row, col) {
 function renderIsometricGrid() {
   const gridEl = $('#iso-grid');
   const { width, height } = gridEl.parentElement.getBoundingClientRect();
-  tileHeight = Math.min(width / (2 * GRID_SIZE), (height - 42) / GRID_SIZE);
+  tileHeight = Math.min((width - 150) / (2 * GRID_SIZE), (height - 150) / GRID_SIZE);
   tileWidth = tileHeight * 2;
   mapTop = (height - tileHeight * GRID_SIZE) / 2;
   mapLeft = (width - GRID_SIZE * tileWidth) / 2;
@@ -122,12 +122,16 @@ function renderIsometricGrid() {
       const terrain = gridTerrain[r][c];
       const hint = hintTiles.find(h => h.row === r && h.col === c);
       const z = (r + c) * 2;
-      const tileClass = `iso-tile ${terrain}${hint && !Game.isMaxLevel ? ' hint' : ''}`;
+      const exit = REGION_EXITS.find(exit => exit.row === r && exit.col === c);
+      const tileClass = `iso-tile ${exit ? 'region-exit ' : ''}${terrain}${hint && !Game.isMaxLevel ? ' hint' : ''}`;
       const landmark = LANDMARKS[terrain];
       const stone = stoneTiles.find(tile => tile.row === r && tile.col === c);
 
       html += `<div class="${tileClass}" style="left:${x - tileWidth / 2}px;top:${y - tileHeight / 2}px;z-index:${z}"
-        data-row="${r}" data-col="${c}"></div>`;
+        data-row="${r}" data-col="${c}" ${exit ? `role="button" tabindex="0" aria-label="Travel to ${regionDestination(exit).name}"` : ''}></div>`;
+      if (exit) {
+        html += `<button class="region-sign ${exit.direction}" data-row="${r}" data-col="${c}" style="left:${x}px;top:${y}px" aria-label="Travel to ${regionDestination(exit).name}">${exit.arrow} ${regionDestination(exit).name}</button>`;
+      }
 
       const position = `left:${x}px;top:${y}px;z-index:${z + 1}`;
       if (landmark?.icon) {
@@ -178,7 +182,7 @@ function spawnHints() {
   const candidates = [];
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
-      if (r !== playerPos.row || c !== playerPos.col) {
+      if ((r !== playerPos.row || c !== playerPos.col) && !REGION_EXITS.some(exit => exit.row === r && exit.col === c)) {
         candidates.push({ row: r, col: c });
       }
     }
@@ -207,8 +211,9 @@ function spawnHints() {
   });
 
   // Pick uncaught species for each hint
-  const uncaught = SPECIES.filter(s => !Game.caughtSpecies.includes(s.id));
-  const speciesPool = uncaught.length > 0 ? uncaught : SPECIES;
+  const regional = regionSpecies();
+  const uncaught = regional.filter(s => !Game.caughtSpecies.includes(s.id));
+  const speciesPool = uncaught.length > 0 ? uncaught : regional;
   hintTiles = candidates.slice(0, count).map(tile => ({
     ...tile,
     speciesId: speciesPool[Math.floor(Math.random() * speciesPool.length)].id,
@@ -247,6 +252,14 @@ function onTileClick(row, col) {
 
   console.log('[Bantso:forest] Tile clicked:', row, col, '| player at:', playerPos.row, playerPos.col);
 
+  if (Game.teamContext || $('#region-guide').open) return;
+  const exit = REGION_EXITS.find(exit => exit.row === row && exit.col === col);
+  if (exit && row === playerPos.row && col === playerPos.col) {
+    Game.busy = true;
+    travelToRegion(exit);
+    return;
+  }
+
   // If clicking same tile, just bounce
   const headingToStone = stoneTiles.some(tile => tile.row === row && tile.col === col);
   if (row === playerPos.row && col === playerPos.col) {
@@ -269,7 +282,7 @@ function onTileClick(row, col) {
 
   console.debug('[Bantso:forest] Route started', { from: playerPos, destination: { row, col }, steps: path.length, headingToStone });
   Game.busy = true;
-  walkPath(path, 0, headingToStone);
+  walkPath(path, 0, headingToStone, exit);
 }
 
 function findPath(from, to) {
@@ -311,8 +324,9 @@ function findPath(from, to) {
   return [];
 }
 
-async function walkPath(path, idx, headingToStone = false) {
+async function walkPath(path, idx, headingToStone = false, travelExit = null) {
   if (idx >= path.length) {
+    if (travelExit) { await travelToRegion(travelExit); return; }
     Game.busy = false;
     console.debug('[Bantso:forest] Route completed', { destination: playerPos, steps: path.length });
     return;
@@ -348,7 +362,7 @@ async function walkPath(path, idx, headingToStone = false) {
 
   const hint = hintTiles.find(tile => tile.row === step.row && tile.col === step.col);
   const chance = hint ? 0.95 : 0.10;
-  const roll = headingToStone || stone || Game.isMaxLevel ? null : Math.random();
+  const roll = travelExit || headingToStone || stone || Game.isMaxLevel ? null : Math.random();
   const destination = path.at(-1);
   console.debug('[Bantso:forest] Route step', {
     step: idx + 1, position: step, destination, terrain: gridTerrain[step.row][step.col],
@@ -365,7 +379,7 @@ async function walkPath(path, idx, headingToStone = false) {
     Game.busy = true;
     console.debug('[Bantso:forest] Encounter declined; continuing route', { position: step, destination });
   }
-  setTimeout(() => walkPath(path, idx + 1, headingToStone), 350);
+  setTimeout(() => walkPath(path, idx + 1, headingToStone, travelExit), 350);
 
 }
 

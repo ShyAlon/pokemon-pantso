@@ -165,6 +165,8 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await page.goto('/');
     await waitForGameReady(page);
 
+    // Wait for any map walk to finish before opening the team.
+    await page.waitForFunction(() => !Game.busy);
     // Open team overlay
     await page.locator('#team-access-btn').click();
     await page.waitForTimeout(300);
@@ -509,7 +511,7 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     });
 
     expect(legendary.count).toBe(14);
-    expect(legendary.encounter).toBe('ronny-hamudi');
+    expect(legendary.encounter).toBe('articuno');
     expect(legendary.meltanEvolution).toBe('melmetal');
     expect(legendary.nullEvolution).toBe('silvally');
     expect(legendary.kubfuEvolution).toBe('urshifu');
@@ -1053,6 +1055,8 @@ test.describe('Pokémon Bantso — End-to-End', () => {
     await page.waitForTimeout(200);
     await page.locator('#menu-close').click();
 
+    // Wait for any map walk to finish before opening the team.
+    await page.waitForFunction(() => !Game.busy);
     // Open team overlay
     await page.locator('#team-access-btn').click();
     await page.waitForTimeout(300);
