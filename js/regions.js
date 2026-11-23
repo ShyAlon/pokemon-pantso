@@ -48,21 +48,50 @@ function showRegionGuide() {
   $('#region-routes').textContent = REGION_EXITS.map(exit => `${exit.arrow} ${regionDestination(exit).name}`).join(' · ');
   $('#region-guide').showModal();
 }
+async function animateRegionTrainer(materializing) {
+  const trainer = $('#child-char');
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const solid = { opacity: 1, filter: 'blur(0px) brightness(1)', transform: 'scale(1)' };
+  const scattered = { opacity: 0, filter: 'blur(12px) brightness(2.5)', transform: 'scale(1.16)' };
+  const animation = trainer.animate(materializing ? [scattered, solid] : [solid, scattered], {
+    duration: 450, easing: materializing ? 'ease-out' : 'ease-in', fill: 'forwards',
+  });
+  await animation.finished.catch(() => {});
+  // Retain the invisible state between animations without leaving an animation behind.
+  trainer.style.opacity = materializing ? '1' : '0';
+  animation.cancel();
+}
+
 async function travelToRegion(exit) {
+  if (Game.busy || Game.screen !== 'forest' || Game.teamContext || $('#region-guide').open) return;
+  Game.busy = true;
   const previousRegion = Game.region;
-  Game.region = regionDestination(exit).name;
+  const previousPosition = { ...playerPos };
+  const destination = regionDestination(exit).name;
+  const trainer = $('#child-char');
+  trainer.classList.remove('walking');
+  trainer.classList.add('region-transfer');
   try {
-    await saveGame();
-  } catch (error) {
-    Game.region = previousRegion;
+    await animateRegionTrainer(false);
+    Game.region = destination;
+    try {
+      await saveGame();
+    } catch (error) {
+      Game.region = previousRegion;
+      playerPos = previousPosition;
+      $('#stone-pickup').textContent = 'Could not save your journey. Tap the exit to try again.';
+      $('#stone-pickup').hidden = false;
+      await animateRegionTrainer(true);
+      return;
+    }
+    const opposite = REGION_EXITS.find(candidate => candidate.dr === -exit.dr && candidate.dc === -exit.dc);
+    playerPos = { row: opposite.row, col: opposite.col };
+    renderForestScreen();
+    Game.audio.play('levelUp');
+    await animateRegionTrainer(true);
+  } finally {
+    trainer.style.opacity = '';
+    trainer.classList.remove('region-transfer');
     Game.busy = false;
-    $('#stone-pickup').textContent = 'Could not save your journey. Tap the exit to try again.';
-    $('#stone-pickup').hidden = false;
-    return;
   }
-  const opposite = REGION_EXITS.find(candidate => candidate.dr === -exit.dr && candidate.dc === -exit.dc);
-  playerPos = { row: opposite.row === 0 ? 1 : 9, col: opposite.col === 0 ? 1 : 9 };
-  Game.busy = false;
-  renderForestScreen();
-  Game.audio.play('levelUp');
 }

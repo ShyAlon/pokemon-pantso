@@ -130,7 +130,7 @@ function renderIsometricGrid() {
       html += `<div class="${tileClass}" style="left:${x - tileWidth / 2}px;top:${y - tileHeight / 2}px;z-index:${z}"
         data-row="${r}" data-col="${c}" ${exit ? `role="button" tabindex="0" aria-label="Travel to ${regionDestination(exit).name}"` : ''}></div>`;
       if (exit) {
-        html += `<button class="region-sign ${exit.direction}" data-row="${r}" data-col="${c}" style="left:${x}px;top:${y}px" aria-label="Travel to ${regionDestination(exit).name}">${exit.arrow} ${regionDestination(exit).name}</button>`;
+        html += `<button class="region-sign ${exit.direction}" data-row="${r}" data-col="${c}" style="left:${x}px;top:${y}px" aria-label="Travel to ${regionDestination(exit).name}">${regionDestination(exit).name}</button>`;
       }
 
       const position = `left:${x}px;top:${y}px;z-index:${z + 1}`;
@@ -254,8 +254,7 @@ function onTileClick(row, col) {
 
   if (Game.teamContext || $('#region-guide').open) return;
   const exit = REGION_EXITS.find(exit => exit.row === row && exit.col === col);
-  if (exit && row === playerPos.row && col === playerPos.col) {
-    Game.busy = true;
+  if (exit) {
     travelToRegion(exit);
     return;
   }
@@ -282,7 +281,7 @@ function onTileClick(row, col) {
 
   console.debug('[Bantso:forest] Route started', { from: playerPos, destination: { row, col }, steps: path.length, headingToStone });
   Game.busy = true;
-  walkPath(path, 0, headingToStone, exit);
+  walkPath(path, 0, headingToStone);
 }
 
 function findPath(from, to) {
@@ -324,9 +323,8 @@ function findPath(from, to) {
   return [];
 }
 
-async function walkPath(path, idx, headingToStone = false, travelExit = null) {
+async function walkPath(path, idx, headingToStone = false) {
   if (idx >= path.length) {
-    if (travelExit) { await travelToRegion(travelExit); return; }
     Game.busy = false;
     console.debug('[Bantso:forest] Route completed', { destination: playerPos, steps: path.length });
     return;
@@ -362,7 +360,7 @@ async function walkPath(path, idx, headingToStone = false, travelExit = null) {
 
   const hint = hintTiles.find(tile => tile.row === step.row && tile.col === step.col);
   const chance = hint ? 0.95 : 0.10;
-  const roll = travelExit || headingToStone || stone || Game.isMaxLevel ? null : Math.random();
+  const roll = headingToStone || stone || Game.isMaxLevel ? null : Math.random();
   const destination = path.at(-1);
   console.debug('[Bantso:forest] Route step', {
     step: idx + 1, position: step, destination, terrain: gridTerrain[step.row][step.col],
@@ -379,7 +377,7 @@ async function walkPath(path, idx, headingToStone = false, travelExit = null) {
     Game.busy = true;
     console.debug('[Bantso:forest] Encounter declined; continuing route', { position: step, destination });
   }
-  setTimeout(() => walkPath(path, idx + 1, headingToStone, travelExit), 350);
+  setTimeout(() => walkPath(path, idx + 1, headingToStone), 350);
 
 }
 

@@ -85,8 +85,10 @@ function renderGameTime() {
   screen.dataset.timeOfDay = day ? 'day' : 'night';
   const body = $('#sky-body');
   body.className = day ? 'sun' : 'moon';
-  body.style.left = `${10 + progress * 80}%`;
-  body.style.top = `${85 - Math.sin(progress * Math.PI) * 57}%`;
+  // Parametric half ellipse: rise from the horizon, crest at noon/midnight, set.
+  const angle = Math.PI * progress;
+  body.style.left = `${50 - Math.cos(angle) * 42}%`;
+  body.style.top = `${92 - Math.sin(angle) * 64}%`;
   body.setAttribute('aria-label', day ? 'Sun' : 'Moon');
   const hour = String(Math.floor(minutes / 60)).padStart(2, '0');
   const minute = String(Math.floor(minutes % 60)).padStart(2, '0');

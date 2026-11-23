@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 async function ready(page) {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
   await page.goto('/');
   await expect(page.locator('.region-exit')).toHaveCount(4);
@@ -29,7 +30,10 @@ test('sun and moon follow arcs while stars and galaxies remain fixed', async ({ 
     return { left: parseFloat(body.style.left), top: parseFloat(body.style.top), type: body.className };
   }, minutes);
   const sunrise = await positionAt(360);
+  const quarter = await positionAt(540);
   const noon = await positionAt(720);
+  expect(quarter.left).toBeCloseTo(50 - Math.SQRT1_2 * 42, 3);
+  expect(quarter.top).toBeCloseTo(92 - Math.SQRT1_2 * 64, 3);
   const afternoon = await positionAt(1000);
   expect(sunrise.left).toBeLessThan(noon.left);
   expect(noon.left).toBeLessThan(afternoon.left);

@@ -451,9 +451,10 @@ The Playwright config automatically starts `python3 -m http.server 8080` before 
 
 Explore Kanto, Johto, Hoenn, Sinnoh, Unova, Kalos, Alola, Galar, and Paldea.
 They form a wrapping 3×3 world in that order, with Kanto at the top left.
-Tap any of the four golden diamond tips or its destination sign to walk there
-and travel. You arrive just inside the opposite tip. Travel paths avoid surprise
-battles; ordinary exploration keeps its existing encounter rules.
+Tap any of the four golden diamond tips or its softly glowing destination name
+to dissipate in place and materialize on the opposite tip square of the new region.
+The transfer locks movement until arrival and respects reduced-motion settings.
+Ordinary exploration keeps its existing encounter rules.
 
 Each region has a different sky, ground palette, terrain distribution, and wild
 encounter pool drawn from the existing Bantso roster. The **?** field guide at the

@@ -8,17 +8,19 @@ test('region exits travel, reverse, and persist; guide follows the regional enco
   await expect(page.locator('#region-guide')).toBeVisible();
   await expect(page.locator('#region-pokemon')).toContainText('Bulbasaur');
   await page.getByRole('button', { name: 'Close region guide' }).click();
-  // Start one step from the tip to exercise actual walking and arrival.
+  // Transfer directly from the current square without walking to the exit.
   await page.evaluate(() => { playerPos = { row: 0, col: 9 }; updateChildPosition(); });
   await page.locator('.region-sign.right').click();
   await expect(page.locator('#region-name')).toHaveText('Johto');
+  await page.waitForFunction(() => !Game.busy);
   await expect(page.locator('#forest-screen')).toHaveAttribute('data-region', 'Johto');
-  expect(await page.evaluate(() => ({ ...playerPos }))).toEqual({ row: 9, col: 1 });
+  expect(await page.evaluate(() => ({ ...playerPos }))).toEqual({ row: 10, col: 0 });
   await page.reload();
   await expect(page.locator('#region-name')).toHaveText('Johto');
   await page.evaluate(() => { playerPos = { row: 10, col: 1 }; updateChildPosition(); });
   await page.locator('.region-sign.left').click();
   await expect(page.locator('#region-name')).toHaveText('Kanto');
+  await page.waitForFunction(() => !Game.busy);
   await page.evaluate(() => { playerPos = { row: 1, col: 0 }; updateChildPosition(); });
   await page.locator('.region-sign.up').click();
   await expect(page.locator('#region-name')).toHaveText('Alola');
@@ -69,4 +71,50 @@ test('region labels fit a phone screen and guide closes with Escape', async ({ p
   await page.keyboard.press('Escape');
   await expect(page.locator('#region-guide')).not.toBeVisible();
   await page.screenshot({ path: '/tmp/pokemon-regions-mobile.png' });
+});
+
+
+test('transfer dissipates in place, locks input, and materializes on the opposite tip', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.region-exit')).toHaveCount(4);
+  await page.evaluate(() => { playerPos = { row: 5, col: 5 }; updateChildPosition(); });
+  await page.locator('.region-sign.right').click();
+  await expect(page.locator('#child-char')).toHaveClass(/region-transfer/);
+  expect(await page.evaluate(() => ({ ...playerPos }))).toEqual({ row: 5, col: 5 });
+  await page.evaluate(() => onTileClick(4, 4));
+  await expect(page.locator('#region-name')).toHaveText('Johto');
+  await page.waitForFunction(() => !Game.busy);
+  expect(await page.evaluate(() => ({ ...playerPos }))).toEqual({ row: 10, col: 0 });
+  await expect(page.locator('#child-char')).not.toHaveClass(/region-transfer|walking/);
+  expect(await page.locator('#child-char').evaluate(node => getComputedStyle(node).opacity)).toBe('1');
+  expect(await page.locator('.region-sign.left').textContent()).toBe('Kanto');
+  expect(await page.locator('.region-sign.left').evaluate(node => ({ background: getComputedStyle(node).backgroundColor, border: getComputedStyle(node).borderTopWidth }))).toEqual({ background: 'rgba(0, 0, 0, 0)', border: '0px' });
+  await page.screenshot({ path: '/tmp/pokemon-refined-travel.png' });
+});
+
+test('all four transfers land on the correct square and failed saves restore the trainer', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('.region-exit')).toHaveCount(4);
+  const arrivals = await page.evaluate(async () => {
+    const results = [];
+    for (const exit of REGION_EXITS) {
+      Game.region = 'Kanto';
+      await travelToRegion(exit);
+      results.push({ ...playerPos });
+    }
+    return results;
+  });
+  expect(arrivals).toEqual([{ row: 10, col: 10 }, { row: 10, col: 0 }, { row: 0, col: 0 }, { row: 0, col: 10 }]);
+  const result = await page.evaluate(async () => {
+    const originalSave = saveGame;
+    const before = { region: Game.region, position: { ...playerPos } };
+    saveGame = async () => { throw new Error('test save failure'); };
+    try { await travelToRegion(REGION_EXITS[0]); } finally { saveGame = originalSave; }
+    return { before, after: { region: Game.region, position: { ...playerPos } }, busy: Game.busy };
+  });
+  expect(result.after).toEqual(result.before);
+  expect(result.busy).toBe(false);
+  await expect(page.locator('#child-char')).toBeVisible();
+  await expect(page.locator('#stone-pickup')).toContainText('Could not save');
 });
