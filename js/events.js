@@ -90,6 +90,7 @@ function setupEventHandlers() {
 
   // Menu
   setupManual();
+  setupTimeSettings();
   $('#menu-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     toggleMenu();

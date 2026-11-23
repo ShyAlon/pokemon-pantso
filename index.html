@@ -21,6 +21,11 @@
       <button id="menu-btn" title="Menu" aria-label="Menu" aria-expanded="false" aria-controls="menu-dropdown">☰</button>
       <div id="menu-dropdown">
         <button class="menu-item" id="menu-manual">📖 Manual</button>
+        <form id="menu-time-form" class="menu-time">
+          <label for="menu-time-input">Game time</label>
+          <div class="menu-time-row"><input id="menu-time-input" type="time" step="60" required aria-describedby="menu-time-status"><button id="menu-time-apply" type="submit">Set time</button></div>
+          <p id="menu-time-status" role="status">Time continues at 1 game minute per second.</p>
+        </form>
         <button class="menu-item" id="menu-restart">🔄 Restart</button>
         <button class="menu-item danger" id="menu-newgame">🗑️ New Game</button>
         <button class="menu-item hard-mode" id="menu-hardmode">🔥 Hard Mode</button>

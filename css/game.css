@@ -146,7 +146,10 @@ body {
   border: 2px solid #2d5a27;
   border-radius: 14px;
   padding: 8px;
-  min-width: 180px;
+  min-width: 240px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 110px);
+  overflow-y: auto;
   display: none;
   flex-direction: column;
   gap: 4px;
@@ -255,6 +258,7 @@ body {
    GAME AREA (middle)
    ========================================== */
 #game-area {
+  z-index: 0;
   flex: 1;
   position: relative;
   overflow: hidden;
@@ -1369,3 +1373,13 @@ body {
 #iso-grid { filter: brightness(var(--terrain-light, 1)); }
 
 #child-char.region-transfer { transition: none; transform-origin: center bottom; will-change: opacity, filter, transform; }
+
+.menu-time { padding: 10px 12px; border-block: 1px solid #ffffff18; margin: 3px 0; }
+.menu-time label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #dfeccc; }
+.menu-time-row { display: flex; gap: 8px; }
+.menu-time input { min-width: 0; width: 115px; flex: 1; padding: 8px; border: 1px solid #ffffff50; border-radius: 8px; color: #fff; background: #122d16; color-scheme: dark; font: 600 15px system-ui; }
+.menu-time button { padding: 8px 10px; border: 1px solid #91b578; border-radius: 8px; color: #f4ffe8; background: #345a2a; font: 700 13px system-ui; cursor: pointer; }
+.menu-time button:disabled { opacity: 0.6; cursor: default; }
+.menu-time p { font-size: 11px; color: #c1d1b8; margin-top: 7px; line-height: 1.4; }
+.menu-time :focus-visible { outline: 2px solid #ffe3a2; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { #menu-dropdown { animation: none; } }

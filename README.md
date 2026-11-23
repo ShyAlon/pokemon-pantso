@@ -490,3 +490,8 @@ A faint, stationary Milky Way and 180 dim background stars add depth. Stars use
 blue-white, cream, and warm orange tints; a minority gently vary in brightness
 with staggered timing. Reduced-motion settings disable twinkling. All star
 positions remain fixed and all night layers fade out in daylight.
+
+Open the menu to set the game clock to any hour and minute using **Game time →
+Set time**. The sky updates immediately, the chosen time is saved, and the clock
+continues at its normal rate. The dropdown stays above the map and scrolls on
+short screens.

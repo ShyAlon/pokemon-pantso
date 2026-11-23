@@ -8,6 +8,11 @@ function toggleMenu() {
   const dropdown = $('#menu-dropdown');
   const isOpen = dropdown.classList.toggle('active');
   $('#menu-btn').setAttribute('aria-expanded', isOpen);
+  if (isOpen) {
+    const minutes = Math.floor(getGameMinutes());
+    $('#menu-time-input').value = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+    $('#menu-time-status').textContent = 'Time continues at 1 game minute per second.';
+  }
   console.log('[Bantso:menu] Toggle menu | now:', dropdown.classList.contains('active') ? 'open' : 'closed');
   Game.audio.play('click');
 }
@@ -15,6 +20,29 @@ function toggleMenu() {
 function closeMenu() {
   $('#menu-dropdown').classList.remove('active');
   $('#menu-btn').setAttribute('aria-expanded', 'false');
+}
+
+function setupTimeSettings() {
+  $('#menu-time-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const input = $('#menu-time-input');
+    if (!input.reportValidity()) return;
+    const [hours, minutes] = input.value.split(':').map(Number);
+    const previousTime = getGameMinutes();
+    const changedAt = performance.now();
+    const button = $('#menu-time-apply');
+    button.disabled = true;
+    resetGameClock(hours * 60 + minutes);
+    try {
+      await saveGame();
+      $('#menu-time-status').textContent = `Time set to ${input.value}. The clock keeps running.`;
+    } catch (error) {
+      resetGameClock(previousTime + (performance.now() - changedAt) / 1000);
+      $('#menu-time-status').textContent = 'Could not save the time. Please try again.';
+    } finally {
+      button.disabled = false;
+    }
+  });
 }
 
 function setupManual() {

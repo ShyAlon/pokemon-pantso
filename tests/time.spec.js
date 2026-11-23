@@ -129,3 +129,32 @@ test('rich night skies have six constellations, colored stars and restrained twi
   await expect(page.locator('[data-constellation="scorpius"]')).toHaveCount(1);
   await page.screenshot({ path: '/tmp/pokemon-rich-south.png' });
 });
+
+
+test('menu sits above the map and sets, saves, and continues game time', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 460 });
+  await ready(page);
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await expect(page.locator('#menu-time-input')).toHaveValue('12:00');
+  const menuAboveMap = await page.locator('#menu-time-input').evaluate(input => {
+    const box = input.getBoundingClientRect();
+    return document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2) === input;
+  });
+  expect(menuAboveMap).toBe(true);
+  await page.locator('#menu-time-input').fill('23:45');
+  await page.getByRole('button', { name: 'Set time', exact: true }).click();
+  await expect(page.locator('#game-clock')).toHaveText('☾ 23:45');
+  await expect(page.locator('#menu-time-status')).toContainText('Time set to 23:45');
+  await page.clock.fastForward(1000);
+  await expect(page.locator('#game-clock')).toHaveText('☾ 23:46');
+  await page.reload();
+  await expect(page.locator('#game-clock')).toHaveText('☾ 23:45');
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await expect(page.locator('#menu-time-input')).toHaveValue('23:45');
+  await page.locator('#menu-time-input').fill('08:00');
+  await page.getByRole('button', { name: 'Set time', exact: true }).click();
+  await expect(page.locator('#game-clock')).toHaveText('☀ 08:00');
+  await page.screenshot({ path: '/tmp/pokemon-time-menu.png' });
+  await page.locator('#menu-close').click();
+  await expect(page.locator('#menu-dropdown')).not.toHaveClass(/active/);
+});
