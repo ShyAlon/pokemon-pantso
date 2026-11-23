@@ -452,7 +452,8 @@ The Playwright config automatically starts `python3 -m http.server 8080` before 
 Explore Kanto, Johto, Hoenn, Sinnoh, Unova, Kalos, Alola, Galar, and Paldea.
 They form a wrapping 3×3 world in that order, with Kanto at the top left.
 Tap any of the four golden diamond tips or its softly glowing destination name
-to dissipate in place and materialize on the opposite tip square of the new region.
+to walk to that corner, dissipate there, and materialize on the opposite tip square
+of the new region. Exit routes avoid surprise battles.
 The transfer locks movement until arrival and respects reduced-motion settings.
 Ordinary exploration keeps its existing encounter rules.
 

@@ -279,7 +279,7 @@ body {
    ========================================== */
 #forest-screen {
   background: linear-gradient(180deg, var(--time-sky, var(--region-sky, #87ceeb)) 0%, var(--time-horizon, var(--region-horizon, #b0e0e6)) 25%, var(--time-grass, var(--region-grass, #7ab648)) 65%, var(--time-ground, var(--region-ground, #4a8c2a)) 100%);
-  cursor: pointer;
+  cursor: default;
   overflow: hidden;
 }
 #iso-grid {
@@ -1324,7 +1324,7 @@ body {
 #region-name { padding: 6px 12px; border-radius: 20px; background: #18382bd9; font-weight: 800; letter-spacing: 1px; }
 #region-help { width: 40px; height: 40px; border: 2px solid #fff3bf; border-radius: 50% 50% 42% 50%; background: linear-gradient(145deg, #fff4c9, #e5b55d); color: #394d3b; font: italic 900 28px Georgia, serif; box-shadow: 0 3px 0 #6b613e, 0 5px 12px #0003; cursor: pointer; }
 .iso-tile.region-exit { background: #ffe39a; box-shadow: inset 0 0 0 4px #fff8d4; }
-.region-sign { position: absolute; z-index: 85; padding: 8px 4px; border: 0; border-radius: 0; background: transparent; color: #fff9df; font: 600 13px system-ui; letter-spacing: 0.04em; cursor: pointer; white-space: nowrap; text-shadow: 0 0 4px #fff6be, 0 0 12px #ffe8a9a0, 0 1px 3px #182d24; }
+.region-sign { position: absolute; z-index: 85; padding: 8px 4px; border: 0; border-radius: 0; background: transparent; color: #fff9df; font: 750 13px system-ui; -webkit-text-stroke: 2px #26382c; paint-order: stroke fill; letter-spacing: 0.04em; cursor: pointer; white-space: nowrap; text-shadow: 0 0 4px #fff6be, 0 0 12px #ffe8a9a0, 0 1px 3px #182d24; }
 .region-sign:hover { color: #fff; text-shadow: 0 0 5px #fff, 0 0 16px #ffe9ac; }
 .region-sign.up { transform: translate(-50%, calc(-100% - 14px)); }
 .region-sign.down { transform: translate(-50%, 14px); }

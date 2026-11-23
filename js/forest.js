@@ -254,7 +254,7 @@ function onTileClick(row, col) {
 
   if (Game.teamContext || $('#region-guide').open) return;
   const exit = REGION_EXITS.find(exit => exit.row === row && exit.col === col);
-  if (exit) {
+  if (exit && row === playerPos.row && col === playerPos.col) {
     travelToRegion(exit);
     return;
   }
@@ -281,7 +281,7 @@ function onTileClick(row, col) {
 
   console.debug('[Bantso:forest] Route started', { from: playerPos, destination: { row, col }, steps: path.length, headingToStone });
   Game.busy = true;
-  walkPath(path, 0, headingToStone);
+  walkPath(path, 0, headingToStone, exit);
 }
 
 function findPath(from, to) {
@@ -323,9 +323,13 @@ function findPath(from, to) {
   return [];
 }
 
-async function walkPath(path, idx, headingToStone = false) {
+async function walkPath(path, idx, headingToStone = false, travelExit = null) {
   if (idx >= path.length) {
     Game.busy = false;
+    if (travelExit) {
+      await travelToRegion(travelExit);
+      return;
+    }
     console.debug('[Bantso:forest] Route completed', { destination: playerPos, steps: path.length });
     return;
   }
@@ -360,7 +364,7 @@ async function walkPath(path, idx, headingToStone = false) {
 
   const hint = hintTiles.find(tile => tile.row === step.row && tile.col === step.col);
   const chance = hint ? 0.95 : 0.10;
-  const roll = headingToStone || stone || Game.isMaxLevel ? null : Math.random();
+  const roll = travelExit || headingToStone || stone || Game.isMaxLevel ? null : Math.random();
   const destination = path.at(-1);
   console.debug('[Bantso:forest] Route step', {
     step: idx + 1, position: step, destination, terrain: gridTerrain[step.row][step.col],
@@ -377,7 +381,7 @@ async function walkPath(path, idx, headingToStone = false) {
     Game.busy = true;
     console.debug('[Bantso:forest] Encounter declined; continuing route', { position: step, destination });
   }
-  setTimeout(() => walkPath(path, idx + 1, headingToStone), 350);
+  setTimeout(() => walkPath(path, idx + 1, headingToStone, travelExit), 350);
 
 }
 

@@ -8,7 +8,7 @@ test('region exits travel, reverse, and persist; guide follows the regional enco
   await expect(page.locator('#region-guide')).toBeVisible();
   await expect(page.locator('#region-pokemon')).toContainText('Bulbasaur');
   await page.getByRole('button', { name: 'Close region guide' }).click();
-  // Transfer directly from the current square without walking to the exit.
+  // Walk to the tip before dissolving and transferring.
   await page.evaluate(() => { playerPos = { row: 0, col: 9 }; updateChildPosition(); });
   await page.locator('.region-sign.right').click();
   await expect(page.locator('#region-name')).toHaveText('Johto');
@@ -74,14 +74,17 @@ test('region labels fit a phone screen and guide closes with Escape', async ({ p
 });
 
 
-test('transfer dissipates in place, locks input, and materializes on the opposite tip', async ({ page }) => {
+test('trainer walks to the corner before dissolving, then materializes on the opposite tip', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.region-exit')).toHaveCount(4);
-  await page.evaluate(() => { playerPos = { row: 5, col: 5 }; updateChildPosition(); });
+  await page.evaluate(() => { playerPos = { row: 0, col: 8 }; updateChildPosition(); });
   await page.locator('.region-sign.right').click();
-  await expect(page.locator('#child-char')).toHaveClass(/region-transfer/);
-  expect(await page.evaluate(() => ({ ...playerPos }))).toEqual({ row: 5, col: 5 });
+  expect(await page.evaluate(() => ({ ...playerPos }))).toEqual({ row: 0, col: 9 });
+  await expect(page.locator('#child-char')).not.toHaveClass(/region-transfer/);
+  await expect(page.locator('#region-name')).toHaveText('Kanto');
   await page.evaluate(() => onTileClick(4, 4));
+  await expect(page.locator('#child-char')).toHaveClass(/region-transfer/);
+  expect(await page.evaluate(() => ({ ...playerPos }))).toEqual({ row: 0, col: 10 });
   await expect(page.locator('#region-name')).toHaveText('Johto');
   await page.waitForFunction(() => !Game.busy);
   expect(await page.evaluate(() => ({ ...playerPos }))).toEqual({ row: 10, col: 0 });
